@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 
 	_ "github.com/jesseobrien/fake-iot/web/statik"
@@ -9,7 +10,7 @@ import (
 	"github.com/rakyll/statik/fs"
 )
 
-func Run(listenAddress, certPath, keyPath, apiToken string) {
+func Run(listenAddress, certPath, keyPath, apiToken string) error {
 	e := echo.New()
 
 	e.Pre(middleware.HTTPSRedirect())
@@ -18,7 +19,7 @@ func Run(listenAddress, certPath, keyPath, apiToken string) {
 
 	statikFS, err := fs.New()
 	if err != nil {
-		e.Logger.Fatal(err)
+		return fmt.Errorf("error initializing statik FS %w", err)
 	}
 
 	h := http.FileServer(statikFS)
@@ -27,5 +28,5 @@ func Run(listenAddress, certPath, keyPath, apiToken string) {
 
 	e.POST("/metrics", IngestMetricsHandler(apiToken))
 
-	e.Logger.Fatal(e.StartTLS(listenAddress, certPath, keyPath))
+	return e.StartTLS(listenAddress, certPath, keyPath)
 }
