@@ -15,6 +15,7 @@ import (
 func Run(database *sql.DB, listenAddress, certPath, keyPath, apiToken string) error {
 	e := echo.New()
 
+	e.Use(middleware.CORS())
 	e.Pre(middleware.HTTPSRedirect())
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -29,9 +30,11 @@ func Run(database *sql.DB, listenAddress, certPath, keyPath, apiToken string) er
 	// New up the account store with a database connection
 	accountStore := storage.NewPgAccountStore(database)
 
-	e.GET("/*", echo.WrapHandler(http.StripPrefix("/", h)))
-
 	e.POST("/metrics", IngestMetricsHandler(apiToken, accountStore))
+	e.POST("/login", UserLoginHandler())
+	e.POST("/logout", UserLogOutHandler())
+
+	e.GET("/*", echo.WrapHandler(http.StripPrefix("/", h)))
 
 	return e.StartTLS(listenAddress, certPath, keyPath)
 }
