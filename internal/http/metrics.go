@@ -11,18 +11,18 @@ import (
 
 // IngestMetricsHandler will take user metrics in and store them into postgres
 func IngestMetricsHandler(apiToken string) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(ctx echo.Context) error {
 		// Set the content-type to `application/json` instead of the default
 		// `application/json;charset=utf-8` as the fakeiot cli doesn't like it
-		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
 		// Extract the bearer token
-		authHeader := c.Request().Header.Get("Authorization")
+		authHeader := ctx.Request().Header.Get("Authorization")
 		token := strings.TrimPrefix(authHeader, "Bearer ")
 
 		// Check that the apiToken is a valid match, otherwise error out
 		if subtle.ConstantTimeCompare([]byte(token), []byte(apiToken)) == 0 {
-			return c.JSON(http.StatusForbidden, errors.New("invalid authorization token"))
+			return ctx.JSON(http.StatusForbidden, errors.New("invalid authorization token"))
 		}
 
 		// @TODO make sure that the fakeiot `tests` pass on this handler (empty request, corrupted request, etc)
@@ -30,6 +30,6 @@ func IngestMetricsHandler(apiToken string) echo.HandlerFunc {
 		// @TODO ensure the payload binds properly
 		// @TODO write the metrics to postgres
 
-		return c.JSON(http.StatusOK, "consumed metric")
+		return ctx.JSON(http.StatusOK, "consumed metric")
 	}
 }

@@ -10,9 +10,14 @@ import (
 	"github.com/rakyll/statik/fs"
 )
 
+type HTTPError struct {
+	Error string `json:"error"`
+}
+
 func Run(listenAddress, certPath, keyPath, apiToken string) error {
 	e := echo.New()
 
+	e.Use(middleware.CORS())
 	e.Pre(middleware.HTTPSRedirect())
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -24,9 +29,11 @@ func Run(listenAddress, certPath, keyPath, apiToken string) error {
 
 	h := http.FileServer(statikFS)
 
-	e.GET("/*", echo.WrapHandler(http.StripPrefix("/", h)))
-
 	e.POST("/metrics", IngestMetricsHandler(apiToken))
+	e.POST("/login", UserLoginHandler())
+	e.POST("/logout", UserLogOutHandler())
+
+	e.GET("/*", echo.WrapHandler(http.StripPrefix("/", h)))
 
 	return e.StartTLS(listenAddress, certPath, keyPath)
 }
