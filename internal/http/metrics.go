@@ -18,7 +18,7 @@ func IngestMetricsHandler(apiToken string) echo.HandlerFunc {
 
 		// Extract the bearer token
 		authHeader := c.Request().Header.Get("Authorization")
-		token := strings.Replace(authHeader, "Bearer ", "", 1)
+		token := strings.TrimPrefix(authHeader, "Bearer ")
 
 		// Check that the apiToken is a valid match, otherwise error out
 		if subtle.ConstantTimeCompare([]byte(token), []byte(apiToken)) == 0 {
