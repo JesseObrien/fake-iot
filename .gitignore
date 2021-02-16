@@ -19,6 +19,3 @@ fake-iot
 tmp/
 node_modules/
 statik/
-
-# Dependency directories (remove the comment below to include it)
-vendor/
