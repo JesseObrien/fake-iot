@@ -9,7 +9,7 @@ import (
 	"github.com/rakyll/statik/fs"
 )
 
-func Run(listenAddress, certPath, keyPath string) {
+func Run(listenAddress, certPath, keyPath, apiToken string) {
 	e := echo.New()
 
 	e.Pre(middleware.HTTPSRedirect())
@@ -24,6 +24,8 @@ func Run(listenAddress, certPath, keyPath string) {
 	h := http.FileServer(statikFS)
 
 	e.GET("/*", echo.WrapHandler(http.StripPrefix("/", h)))
+
+	e.POST("/metrics", IngestMetricsHandler(apiToken))
 
 	e.Logger.Fatal(e.StartTLS(listenAddress, certPath, keyPath))
 }

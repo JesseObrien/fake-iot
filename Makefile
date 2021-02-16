@@ -1,10 +1,8 @@
 .ONESHELL:
 .PHONY: install
 install:
-	export GO111MODULE=off
 	go get -u github.com/rakyll/statik
 	go get -u github.com/cosmtrek/air
-	export GO111MODULE=on
 	go mod vendor
 	cd web/ && npm install
 
@@ -20,6 +18,7 @@ build:
 
 .PHONY: watch
 watch:
+	export FAKEIOT_API_TOKEN=882e8f9b-76a3-46fb-9f7e-bd536bdf5795
 	air
 
 .PHONY: certs

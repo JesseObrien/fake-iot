@@ -22,6 +22,14 @@ This project uses the (golang-standards project-layout)[https://github.com/golan
 
 ## Development
 
+Using docker-compose, you'll need to be running a postgres database.
+
+`docker-compose up -d`
+
 Using a little utility called (air)[https://github.com/cosmtrek/air] you can rebuild all files on watch.
 
 `make watch`
+
+Development API token (For the fakeiot CLI):
+
+`--token=882e8f9b-76a3-46fb-9f7e-bd536bdf5795`

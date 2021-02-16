@@ -1,33 +1,58 @@
 "use strict";
 
 const App = () => {
-  const [loggedIn, setLogin] = React.useState(true);
+  // Set the user login for now based on false
+  // @TODO check the cookie and set the state based on the cookie
+  const [loggedIn, setLogin] = React.useState(false);
 
-  const onLogin = () => {};
+  //
+  const [loginRequest, setLoginRequest] = React.useState({
+    email: "",
+    password: "",
+  });
 
+  const handleLogin = () => {
+    // @TODO Handle the user login, send the loginRequest to the server, set a cookie and log the user in
+    console.log("login requested with credentials:", loginRequest);
+  };
+
+  const onInputChange = (name, value) => {
+    setLoginRequest({ ...loginRequest, [name]: value });
+  };
+
+  // If the user is logged in, render the dashboard instead
   if (loggedIn) {
     return <Dashboard />;
   }
 
+  // If the user is not logged in, render the login form
   return (
-    <form className="login-form" method="get" action="/dashboard.html">
+    <div className="login-form">
       <h1>Sign Into Your Account</h1>
 
       <div>
         <label for="email">Email Address</label>
-        <input type="email" id="email" className="field" />
+        <input
+          onChange={(event) => onInputChange("email", event.target.value)}
+          type="email"
+          id="email"
+          className="field"
+        />
       </div>
 
       <div>
         <label for="password">Password</label>
-        <input type="password" id="password" className="field" />
+        <input
+          onChange={(event) => onInputChange("password", event.target.value)}
+          type="password"
+          id="password"
+          className="field"
+        />
       </div>
 
-      <input
-        type="submit"
-        value="Login to my Dashboard"
-        className="button block"
-      />
-    </form>
+      <button onClick={handleLogin} className="button block">
+        Login to my Dashboard
+      </button>
+    </div>
   );
 };

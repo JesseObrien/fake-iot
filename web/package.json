@@ -10,9 +10,11 @@
   },
   "author": "",
   "license": "MIT",
-  "dependencies": {},
   "devDependencies": {
-    "@babel/preset-react": "^7.12.13",
-    "babel-cli": "^6.26.0"
+    "@babel/preset-react": "^7.12.13"
+  },
+  "dependencies": {
+    "@babel/cli": "^7.12.16",
+    "@babel/core": "^7.12.16"
   }
 }
