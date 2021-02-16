@@ -1,6 +1,7 @@
 package http
 
 import (
+	"crypto/subtle"
 	"errors"
 	"net/http"
 	"strings"
@@ -20,7 +21,7 @@ func IngestMetricsHandler(apiToken string) echo.HandlerFunc {
 		token := strings.Replace(authHeader, "Bearer ", "", 1)
 
 		// Check that the apiToken is a valid match, otherwise error out
-		if token != apiToken {
+		if subtle.ConstantTimeCompare([]byte(token), []byte(apiToken)) == 0 {
 			return c.JSON(http.StatusForbidden, errors.New("invalid authorization token"))
 		}
 
