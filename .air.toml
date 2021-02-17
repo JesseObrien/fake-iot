@@ -1,0 +1,8 @@
+[build]
+cmd = "make build"
+bin = "./tmp/fake-iot"
+include_ext = ["go", "js", "html"]
+exclude_dir = ["vendor", "tmp", "web/node_modules", "web/public", "web/statik"]
+
+[misc]
+clean_on_exit = true
