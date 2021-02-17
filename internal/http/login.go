@@ -1,23 +1,18 @@
 package http
 
 import (
-	"crypto/subtle"
 	"log"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 )
 
-// As talked about in the design doc, I'm hard coding this. Ideally it would be stored
-// in the database and looked up on request
-const USER_EMAIL = "test@example.com"
-
 type UserLoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-func UserLoginHandler() echo.HandlerFunc {
+func UserLoginHandler(expectedEmail string, expectedPassword []byte) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 
 		loginRequest := UserLoginRequest{}
@@ -29,24 +24,30 @@ func UserLoginHandler() echo.HandlerFunc {
 			// Do not show the actual error to the user to allow them to see
 			// anything about whether the email is valid/invalid, etc. to prevent anyone from
 			// brute force looking for active accounts
-			return ctx.JSON(http.StatusForbidden, HTTPError{"username or password is incorrect"})
+			return echo.NewHTTPError(http.StatusUnauthorized, "something went wrong, try again or contact a site administrator")
 		}
 
-		// @NOTE there would be code here to go to the database and make sure that email exists as a valid account and has a password
+		// @NOTE there would be code here to go to the database and pull the user record instead of using the hard
+		// coded values
 
-		// check the email matches
-		if subtle.ConstantTimeCompare([]byte(loginRequest.Email), []byte(USER_EMAIL)) == 0 {
-			log.Printf("error user attempted to log in with invalid email\n")
-			return ctx.JSON(http.StatusForbidden, HTTPError{"username or password is incorrect"})
+		// If the user credentials are empty
+		if loginRequest == (UserLoginRequest{}) {
+			return echo.NewHTTPError(http.StatusUnauthorized, "you must provide a username and password")
 		}
 
-		cookie := createTokenCookie()
+		if err := checkEmailAndPassword(loginRequest.Email, loginRequest.Password, expectedEmail, expectedPassword); err != nil {
+			log.Printf("error user attempted to log in with invalid credentials\n")
+			return echo.NewHTTPError(http.StatusUnauthorized, "username or password is incorrect")
+		}
+
+		cookie, err := createTokenCookie(loginRequest.Email)
+
+		if err != nil {
+			log.Printf("errro generating cookie for user: %v", err)
+			return echo.NewHTTPError(http.StatusInternalServerError, "something went wrong on our end, check with a site administrator")
+		}
 
 		ctx.SetCookie(cookie)
-
-		// Normally I would set the domain from whatever site we're hosting on but for this case in development
-		// I'll forego it
-		// cookie.Domain = '.example.com'
 
 		return ctx.NoContent(http.StatusNoContent)
 	}
@@ -54,10 +55,10 @@ func UserLoginHandler() echo.HandlerFunc {
 
 func UserLogOutHandler() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		cookie, err := logUserOut(ctx)
+		cookie, err := expireLoginToken(ctx)
 
 		if err != nil {
-			return ctx.JSON(http.StatusInternalServerError, HTTPError{"error logging out"})
+			return echo.NewHTTPError(http.StatusInternalServerError, "error logging out")
 		}
 
 		ctx.SetCookie(cookie)
