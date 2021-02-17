@@ -14,7 +14,7 @@ const App = () => {
   // @TODO check the cookie and set the state based on the cookie
   const [loggedIn, setLoggedIn] = React.useState(userToken !== "");
 
-  const NullLoginError = { error: null };
+  const NullLoginError = { message: null };
 
   // Using this to store and show the login error
   const [loginError, setLoginError] = React.useState(NullLoginError);
@@ -24,7 +24,9 @@ const App = () => {
     password: "",
   });
 
-  const handleLogin = () => {
+  const handleLogin = (e) => {
+    e.preventDefault();
+
     // Every attempt reset the error state
     setLoginError(NullLoginError);
 
@@ -67,7 +69,7 @@ const App = () => {
 
   // If the user is not logged in, render the login form
   return (
-    <div className="login-form">
+    <form className="login-form" onSubmit={handleLogin}>
       <h1>Sign Into Your Account</h1>
 
       <div>
@@ -90,11 +92,13 @@ const App = () => {
         />
       </div>
 
-      {loginError.error && <p>Error: {loginError.error} </p>}
+      {loginError.message && (
+        <div className="alert is-error">Error: {loginError.message} </div>
+      )}
 
-      <button onClick={handleLogin} className="button block">
+      <button type="submit" className="button block">
         Login to my Dashboard
       </button>
-    </div>
+    </form>
   );
 };

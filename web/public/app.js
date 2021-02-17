@@ -13,7 +13,7 @@ const App = () => {
 
   const [loggedIn, setLoggedIn] = React.useState(userToken !== "");
   const NullLoginError = {
-    error: null
+    message: null
   }; // Using this to store and show the login error
 
   const [loginError, setLoginError] = React.useState(NullLoginError);
@@ -22,8 +22,9 @@ const App = () => {
     password: ""
   });
 
-  const handleLogin = () => {
-    // Every attempt reset the error state
+  const handleLogin = e => {
+    e.preventDefault(); // Every attempt reset the error state
+
     setLoginError(NullLoginError);
     axios.post("/login", loginRequest).then(response => {
       if (response.status == 204) {
@@ -61,8 +62,9 @@ const App = () => {
   } // If the user is not logged in, render the login form
 
 
-  return /*#__PURE__*/React.createElement("div", {
-    className: "login-form"
+  return /*#__PURE__*/React.createElement("form", {
+    className: "login-form",
+    onSubmit: handleLogin
   }, /*#__PURE__*/React.createElement("h1", null, "Sign Into Your Account"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     for: "email"
   }, "Email Address"), /*#__PURE__*/React.createElement("input", {
@@ -77,8 +79,10 @@ const App = () => {
     type: "password",
     id: "password",
     className: "field"
-  })), loginError.error && /*#__PURE__*/React.createElement("p", null, "Error: ", loginError.error, " "), /*#__PURE__*/React.createElement("button", {
-    onClick: handleLogin,
+  })), loginError.message && /*#__PURE__*/React.createElement("div", {
+    className: "alert is-error"
+  }, "Error: ", loginError.message, " "), /*#__PURE__*/React.createElement("button", {
+    type: "submit",
     className: "button block"
   }, "Login to my Dashboard"));
 };
