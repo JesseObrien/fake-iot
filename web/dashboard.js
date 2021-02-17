@@ -1,13 +1,35 @@
-const Dashboard = ({ handleLogout }) => {
-  const [accountLimit, setAccountLimit] = React.useState(100);
-  const [loginCount, setLoginCount] = React.useState(0);
-  const loginPercent = (loginCount / accountLimit) * 100;
+class AccountDetails {
+  constructor(planLimit, loginCount, planName, planCost) {
+    this.planLimit = planLimit;
+    this.loginCount = loginCount;
+    this.planName = planName;
+    this.planCost = planCost;
+  }
 
-  const [accountMaxReached, setAccountMaxReached] = React.useState(false);
+  limitReached() {
+    return this.planLimit == this.loginCount;
+  }
+
+  percentOfLimit() {
+    return (this.loginCount / this.planLimit) * 100;
+  }
+}
+
+const Dashboard = ({ handleLogout }) => {
+  const [accountDetails, setAccountDetails] = React.useState(
+    new AccountDetails()
+  );
+
+  React.useEffect(() => {
+    // @TODO load this from the server
+    setAccountDetails(new AccountDetails(100, 0, "Startup", 100));
+  }, [accountDetails]);
+
   const [accountUpgraded, setAccountUpgraded] = React.useState(false);
 
   const handleAccountUpgrade = () => {
     console.log("account upgraded");
+    // @TODO make the HTTP request to upgrade the account for the user
     setAccountUpgraded(true);
   };
 
@@ -20,7 +42,7 @@ const Dashboard = ({ handleLogout }) => {
         </button>
       </header>
 
-      {accountMaxReached && (
+      {accountDetails.limitReached() && (
         <div class="alert is-error">
           You have exceeded the maximum number of users for your account, please
           upgrade your plan to increaese the limit.
@@ -34,18 +56,20 @@ const Dashboard = ({ handleLogout }) => {
       )}
 
       <div class="plan">
-        <header>Startup Plan - $100/Month</header>
+        <header>
+          {accountDetails.planName} Plan - ${accountDetails.planCost}/Month
+        </header>
 
         <div class="plan-content">
           <div class="progress-bar">
             <div
-              style={{ width: `${loginPercent}%` }}
+              style={{ width: `${accountDetails.percentOfLimit()}%` }}
               class="progress-bar-usage"
             ></div>
           </div>
 
           <h3>
-            Users: {loginCount}/{accountLimit}
+            Users: {accountDetails.loginCount}/{accountDetails.planLimit}
           </h3>
         </div>
 
