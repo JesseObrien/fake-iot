@@ -19,12 +19,7 @@ const AUTH_COOKIE_NAME = "user_token"
 // to be able to query for them across multiple services
 var USER_TOKENS = map[string]string{}
 
-type ErrInvalidAuthToken struct {
-}
-
-func (e ErrInvalidAuthToken) Error() string {
-	return "auth token is invalid"
-}
+var ErrInvalidAuthToken = errors.New("auth token is invalid")
 
 func checkEmailAndPassword(email, password, expectedEmail string, hashedPassword []byte) error {
 	if subtle.ConstantTimeCompare([]byte(expectedEmail), []byte(email)) == 0 {
