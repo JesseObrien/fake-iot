@@ -12,12 +12,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const AUTH_COOKIE_NAME = "user_token"
+const AuthCookieName = "user_token"
 
 // Store user tokens in memory.
 // Note: Nominally these would be in a storage location like redis or something
 // to be able to query for them across multiple services
-var USER_TOKENS = map[string]string{}
+var UserTokens = map[string]string{}
 
 var ErrInvalidAuthToken = errors.New("auth token is invalid")
 
@@ -34,7 +34,7 @@ func checkEmailAndPassword(email, password, expectedEmail string, hashedPassword
 }
 
 func hashUserPassword(password string) ([]byte, error) {
-	hashedpw, err := bcrypt.GenerateFromPassword([]byte(USER_PASSWORD), 10)
+	hashedpw, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 	if err != nil {
 		return nil, fmt.Errorf("could not hash hard coded password %w", err)
 	}
@@ -56,12 +56,14 @@ func createTokenCookie(email string) (*http.Cookie, error) {
 	// Keep track of user tokens in a map so we can revoke them if need be
 	// @NOTE this is not a good or secure way of holding the tokens. I would probably
 	// store them in the DB user's table and be able to look them up/revoke them from there.
-	USER_TOKENS[newToken] = email
+	UserTokens[newToken] = email
 
 	cookie := new(http.Cookie)
-	cookie.Name = AUTH_COOKIE_NAME
+	cookie.Name = AuthCookieName
 	cookie.Value = newToken
 	cookie.Expires = time.Now().Add(30 * time.Hour)
+
+	cookie.SameSite = http.SameSiteStrictMode
 
 	// Ensure the cookie only works over HTTPS
 	cookie.Secure = true
@@ -70,29 +72,29 @@ func createTokenCookie(email string) (*http.Cookie, error) {
 }
 
 func checkLoginCookie(ctx echo.Context) error {
-	cookie, err := ctx.Cookie(AUTH_COOKIE_NAME)
+	cookie, err := ctx.Cookie(AuthCookieName)
 
 	if err != nil {
-		return fmt.Errorf("error getting cookie `%s`, %w", AUTH_COOKIE_NAME, err)
+		return fmt.Errorf("error getting cookie `%s`, %w", AuthCookieName, err)
 	}
 
 	// find the cookie value in the map
-	_, ok := USER_TOKENS[cookie.Value]
+	_, ok := UserTokens[cookie.Value]
 	if !ok {
-		return ErrInvalidAuthToken{}
+		return ErrInvalidAuthToken
 	}
 
 	return nil
 }
 
 func expireLoginToken(ctx echo.Context) (*http.Cookie, error) {
-	cookie, err := ctx.Cookie(AUTH_COOKIE_NAME)
+	cookie, err := ctx.Cookie(AuthCookieName)
 	if err != nil {
 		return nil, err
 	}
 
 	// Delete the token from the registered tokens
-	delete(USER_TOKENS, cookie.Value)
+	delete(UserTokens, cookie.Value)
 
 	// Set the max age of the cookie to 0, meaning it will expire immediately
 	cookie.MaxAge = -1
