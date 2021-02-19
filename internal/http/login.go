@@ -36,7 +36,7 @@ func UserLoginHandler(expectedEmail string, expectedPassword []byte) echo.Handle
 		}
 
 		if err := checkEmailAndPassword(loginRequest.Email, loginRequest.Password, expectedEmail, expectedPassword); err != nil {
-			log.Printf("error user attempted to log in with invalid credentials\n")
+			log.Printf("error user attempted to log in with invalid credentials: %v", err)
 			return echo.NewHTTPError(http.StatusUnauthorized, "username or password is incorrect")
 		}
 
