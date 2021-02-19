@@ -19,8 +19,25 @@ build:
 .PHONY: watch
 watch:
 	export FAKEIOT_API_TOKEN=882e8f9b-76a3-46fb-9f7e-bd536bdf5795
+	export DATABASE_URL=postgresql://testuser:abcd1234@localhost:5432/fakeiot
 	air
+
+.PHONY: clean 
+clean:
+	docker-compose down
 
 .PHONY: certs
 certs:
-	docker run --rm -w /certs --mount src="`pwd`/certs",target=/certs,type=bind golang:alpine /bin/sh -c "go run /usr/local/go/src/crypto/tls/generate_cert.go --host localhost && chmod 755 *.pem"
+	cd certs
+	openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes \
+		-keyout server.key -out server.crt -extensions san -config \
+		<(echo "[req]"; 
+			echo distinguished_name=req; 
+			echo "[san]"; 
+			echo subjectAltName=DNS:example.com,DNS:www.example.net,IP:127.0.0.1
+			) \
+		-subj "/CN=example.com"
+
+.PHONY: psql
+psql:
+	docker-compose exec postgres /bin/sh -c "psql -U testuser -d fakeiot"

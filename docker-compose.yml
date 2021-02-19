@@ -5,6 +5,8 @@ services:
     image: postgres:alpine
     ports:
       - 5432:5432
+    volumes:
+      - ./scripts/init-pg.sql:/docker-entrypoint-initdb.d/init-pg.sql
     environment:
-      POSTGRES_PASSWORD: abcd1234
       POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: abcd1234

@@ -3,33 +3,54 @@ package http
 import (
 	"crypto/subtle"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 
+	"github.com/jesseobrien/fake-iot/internal/storage"
 	"github.com/labstack/echo/v4"
 )
 
 // IngestMetricsHandler will take user metrics in and store them into postgres
-func IngestMetricsHandler(apiToken string) echo.HandlerFunc {
-	return func(c echo.Context) error {
+func IngestMetricsHandler(apiToken string, accountStore storage.AccountStore) echo.HandlerFunc {
+	return func(ctx echo.Context) error {
 		// Set the content-type to `application/json` instead of the default
 		// `application/json;charset=utf-8` as the fakeiot cli doesn't like it
-		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
 		// Extract the bearer token
-		authHeader := c.Request().Header.Get("Authorization")
+		authHeader := ctx.Request().Header.Get("Authorization")
 		token := strings.TrimPrefix(authHeader, "Bearer ")
 
 		// Check that the apiToken is a valid match, otherwise error out
 		if subtle.ConstantTimeCompare([]byte(token), []byte(apiToken)) == 0 {
-			return c.JSON(http.StatusForbidden, errors.New("invalid authorization token"))
+			return ctx.JSON(http.StatusForbidden, errors.New("invalid authorization token"))
 		}
 
-		// @TODO make sure that the fakeiot `tests` pass on this handler (empty request, corrupted request, etc)
-		// @TODO put together a custom type for the metrics payload
-		// @TODO ensure the payload binds properly
-		// @TODO write the metrics to postgres
+		metric := storage.UserLoginMetric{}
 
-		return c.JSON(http.StatusOK, "consumed metric")
+		if err := ctx.Bind(&metric); err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "bad request")
+		}
+
+		if metric == (storage.UserLoginMetric{}) {
+			return echo.NewHTTPError(http.StatusBadRequest, "metric should not be empty")
+		}
+
+		echoCtx := ctx.Request().Context()
+
+		if err := accountStore.Write(echoCtx, metric); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+
+		// @TODO remove this, just testing it
+		count, err := accountStore.CountByAccountId(echoCtx, metric.AccountID)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+
+		log.Printf("count of logins: %d", count)
+
+		return ctx.JSON(http.StatusOK, "consumed metric")
 	}
 }
