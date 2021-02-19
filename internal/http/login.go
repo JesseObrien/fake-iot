@@ -43,7 +43,7 @@ func UserLoginHandler(expectedEmail string, expectedPassword []byte) echo.Handle
 		cookie, err := createTokenCookie(loginRequest.Email)
 
 		if err != nil {
-			log.Printf("errro generating cookie for user: %v", err)
+			log.Printf("error generating cookie for user: %v", err)
 			return echo.NewHTTPError(http.StatusInternalServerError, "something went wrong on our end, check with a site administrator")
 		}
 
