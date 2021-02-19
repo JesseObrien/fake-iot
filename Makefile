@@ -15,6 +15,9 @@ build:
 	cd ..
 	go build -ldflags="-s -w" -o ./tmp/fake-iot ./cmd/fake-iot/main.go
 
+.PHONY: test
+test:
+	go test ./...
 
 .PHONY: watch
 watch:

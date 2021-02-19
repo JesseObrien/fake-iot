@@ -50,6 +50,7 @@ func IngestMetricsHandler(apiToken string, accountStore storage.AccountStore) ec
 		}
 
 		log.Printf("count of logins: %d", count)
+		// @TODO remove the above
 
 		return ctx.JSON(http.StatusOK, "consumed metric")
 	}
