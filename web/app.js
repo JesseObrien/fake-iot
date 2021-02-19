@@ -7,6 +7,10 @@ function getCookie(key) {
   return b ? b.pop() : "";
 }
 
+function removeCookie(key) {
+  document.cookie = `${key}=;expires=${new Date().toUTCString()};path=/`;
+}
+
 const App = () => {
   const userToken = getCookie("user_token");
 
@@ -47,7 +51,7 @@ const App = () => {
 
   const handleLogout = () => {
     axios
-      .post("/logout")
+      .post("/auth/logout")
       .then((response) => {
         if (response.status === 204) {
           setLoggedIn(false);
@@ -55,6 +59,11 @@ const App = () => {
       })
       .catch((error) => {
         console.log(error);
+        // If the token is invalid, assume it was revoked and log the user out
+        if (error.response.status === 401) {
+          removeCookie("user_token");
+          setLoggedIn(false);
+        }
       });
   };
 

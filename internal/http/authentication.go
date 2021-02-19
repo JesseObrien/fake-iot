@@ -17,8 +17,6 @@ const AuthCookieName = "user_token"
 // Store user tokens in memory.
 // Note: Nominally these would be in a storage location like redis or something
 // to be able to query for them across multiple services
-var UserTokens = map[string]string{}
-
 var ErrInvalidAuthToken = errors.New("auth token is invalid")
 
 func checkEmailAndPassword(email, password, expectedEmail string, hashedPassword []byte) error {
@@ -43,7 +41,7 @@ func hashUserPassword(password string) ([]byte, error) {
 }
 
 // Create a login cookie with a new token
-func createTokenCookie(email string) (*http.Cookie, error) {
+func createTokenCookie(tokenStore TokenStore, email string) (*http.Cookie, error) {
 
 	token := make([]byte, 26)
 	_, err := rand.Read(token)
@@ -56,7 +54,7 @@ func createTokenCookie(email string) (*http.Cookie, error) {
 	// Keep track of user tokens in a map so we can revoke them if need be
 	// @NOTE this is not a good or secure way of holding the tokens. I would probably
 	// store them in the DB user's table and be able to look them up/revoke them from there.
-	UserTokens[newToken] = email
+	tokenStore[newToken] = email
 
 	cookie := new(http.Cookie)
 	cookie.Name = AuthCookieName
@@ -71,30 +69,34 @@ func createTokenCookie(email string) (*http.Cookie, error) {
 	return cookie, nil
 }
 
-func checkLoginCookie(ctx echo.Context) error {
-	cookie, err := ctx.Cookie(AuthCookieName)
+func Authentication(tokenStore TokenStore) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			cookie, err := ctx.Cookie(AuthCookieName)
 
-	if err != nil {
-		return fmt.Errorf("error getting cookie `%s`, %w", AuthCookieName, err)
+			if err != nil {
+				return echo.NewHTTPError(http.StatusUnauthorized, "no auth cookie present")
+			}
+
+			// find the cookie value in the map
+			_, ok := tokenStore[cookie.Value]
+			if !ok {
+				return echo.NewHTTPError(http.StatusUnauthorized, "invalid auth token")
+			}
+
+			return next(ctx)
+		}
 	}
-
-	// find the cookie value in the map
-	_, ok := UserTokens[cookie.Value]
-	if !ok {
-		return ErrInvalidAuthToken
-	}
-
-	return nil
 }
 
-func expireLoginToken(ctx echo.Context) (*http.Cookie, error) {
+func expireLoginToken(ctx echo.Context, tokenStore TokenStore) (*http.Cookie, error) {
 	cookie, err := ctx.Cookie(AuthCookieName)
 	if err != nil {
 		return nil, err
 	}
 
 	// Delete the token from the registered tokens
-	delete(UserTokens, cookie.Value)
+	delete(tokenStore, cookie.Value)
 
 	// Set the max age of the cookie to 0, meaning it will expire immediately
 	cookie.MaxAge = -1

@@ -14,11 +14,13 @@ import (
 
 // As talked about in the design doc, I'm hard coding this. Ideally it would be stored
 // in the database and looked up on request
-const USER_EMAIL = "test@example.com"
+const UserEmail = "test@example.com"
+
+type TokenStore map[string]string
 
 // As in the design doc, I'm hard coding the password and will hash it on startup. Ideally
 // the bcrypt hash would be stored in the database along with the username.
-var USER_PASSWORD = "p@ssw0rd"
+var UserPassword = "p@ssw0rd"
 
 func Run(database *sql.DB, listenAddress, certPath, keyPath, apiToken string) error {
 	e := echo.New()
@@ -37,18 +39,24 @@ func Run(database *sql.DB, listenAddress, certPath, keyPath, apiToken string) er
 
 	// New up the account store with a database connection
 	accountStore := storage.NewPgAccountStore(database)
+	tokenStore := TokenStore{}
 
 	// Hash the hard coded password and pass it in to be checked
 	// @NOTE normally we'd hash the user's password on sign-up and store it in the DB
-	hashedpw, err := hashUserPassword(USER_PASSWORD)
+	hashedpw, err := hashUserPassword(UserPassword)
 	if err != nil {
 		return err
 	}
 
 	e.POST("/metrics", IngestMetricsHandler(apiToken, accountStore))
-	e.POST("/login", UserLoginHandler(USER_EMAIL, hashedpw))
-	e.POST("/logout", UserLogOutHandler())
+	e.POST("/login", UserLoginHandler(tokenStore, UserEmail, hashedpw))
 
+	// Protected routes
+	g := e.Group("auth")
+	g.Use(Authentication(tokenStore))
+	g.POST("/logout", UserLogOutHandler(tokenStore))
+
+	// the SPA route
 	e.GET("/*", echo.WrapHandler(http.StripPrefix("/", h)))
 
 	return e.StartTLS(listenAddress, certPath, keyPath)
