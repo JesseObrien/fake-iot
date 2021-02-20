@@ -3,54 +3,37 @@ package storage
 import (
 	"context"
 	"fmt"
-	"log"
 
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"database/sql"
+
+	_ "github.com/lib/pq"
 )
 
 type PgAccountStore struct {
-	conn *pgxpool.Pool
+	conn *sql.DB
 }
 
-func NewPgAccountStore(conn *pgxpool.Pool) *PgAccountStore {
+func NewPgAccountStore(conn *sql.DB) *PgAccountStore {
 	return &PgAccountStore{conn}
 }
 
 func (pas *PgAccountStore) Write(ctx context.Context, metric UserLoginMetric) error {
-	tx, err := pas.conn.BeginTx(ctx, pgx.TxOptions{})
-
-	if err != nil {
-		return fmt.Errorf("could not begin transaction %w", err)
-	}
-
 	sql := `INSERT INTO account_logins (user_id, account_id, timestamp) VALUES ($1, $2, $3)`
 
-	_, err = tx.Exec(ctx, sql, metric.UserID, metric.AccountID, metric.Timestamp)
-	if err != nil {
-		err := tx.Rollback(ctx)
-		if err != nil {
-			log.Printf("error rolling back transaction %v", err)
-		}
+	_, err := pas.conn.QueryContext(ctx, sql, metric.UserID, metric.AccountID, metric.Timestamp)
 
-		log.Printf("database failure: %v", err)
-		return fmt.Errorf("could not execute sql statement %w", err)
-	}
-
-	err = tx.Commit(ctx)
 	if err != nil {
-		return fmt.Errorf("could not commit sql transaction %w", err)
+		return fmt.Errorf("error inserting metric into database: %v", err)
 	}
 
 	return nil
 }
 
 func (pas *PgAccountStore) CountByAccountId(ctx context.Context, accountId string) (int, error) {
-
 	sql := `SELECT COUNT(*) FROM account_logins WHERE account_id=$1`
 
 	var count int
-	err := pas.conn.QueryRow(ctx, sql, accountId).Scan(&count)
+	err := pas.conn.QueryRowContext(ctx, sql, accountId).Scan(&count)
 
 	if err != nil {
 		return count, fmt.Errorf("could not execute sql statement %w", err)

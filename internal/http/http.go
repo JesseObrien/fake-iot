@@ -1,10 +1,10 @@
 package http
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jesseobrien/fake-iot/internal/storage"
 	_ "github.com/jesseobrien/fake-iot/web/statik"
 	"github.com/labstack/echo/v4"
@@ -12,7 +12,7 @@ import (
 	"github.com/rakyll/statik/fs"
 )
 
-func Run(database *pgxpool.Pool, listenAddress, certPath, keyPath, apiToken string) error {
+func Run(database *sql.DB, listenAddress, certPath, keyPath, apiToken string) error {
 	e := echo.New()
 
 	e.Pre(middleware.HTTPSRedirect())

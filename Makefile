@@ -22,7 +22,7 @@ test:
 .PHONY: watch
 watch:
 	export FAKEIOT_API_TOKEN=882e8f9b-76a3-46fb-9f7e-bd536bdf5795
-	export DATABASE_URL=postgresql://testuser:abcd1234@localhost:5432/fakeiot
+	export DATABASE_URL=postgresql://testuser:abcd1234@localhost:5432/fakeiot?sslmode=disable
 	air
 
 .PHONY: clean 
