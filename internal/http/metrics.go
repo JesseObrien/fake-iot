@@ -3,7 +3,6 @@ package http
 import (
 	"crypto/subtle"
 	"errors"
-	"log"
 	"net/http"
 	"strings"
 
@@ -42,15 +41,6 @@ func IngestMetricsHandler(apiToken string, accountStore storage.AccountStore) ec
 		if err := accountStore.Write(echoCtx, metric); err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
-
-		// @TODO remove this, just testing it
-		count, err := accountStore.CountByAccountId(echoCtx, metric.AccountID)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-		}
-
-		log.Printf("count of logins: %d", count)
-		// @TODO remove the above
 
 		return ctx.JSON(http.StatusOK, "consumed metric")
 	}
