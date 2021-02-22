@@ -39,19 +39,14 @@ func (mas *MemAccountStore) WroteMetric(accountId, userId string) (bool, error) 
 
 func (mas *MemAccountStore) Write(ctx context.Context, metric UserLoginMetric) error {
 	mas.mu.Lock()
+	defer mas.mu.Unlock()
 	if _, ok := mas.metrics[metric.AccountID]; !ok {
 		mas.metrics[metric.AccountID] = []UserLoginMetric{metric}
-		mas.mu.Unlock()
 		return nil
 	}
-	mas.mu.Unlock()
 
-	mas.mu.Lock()
 	metrics := mas.metrics[metric.AccountID]
 	mas.metrics[metric.AccountID] = append(metrics, metric)
-	mas.mu.Unlock()
-
-	return nil
 }
 
 func (mas *MemAccountStore) CountByAccountId(ctx context.Context, accountId string) (int, error) {
