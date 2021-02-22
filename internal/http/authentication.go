@@ -3,6 +3,7 @@ package http
 import (
 	"crypto/rand"
 	"crypto/subtle"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -49,7 +50,7 @@ func createTokenCookie(tokenStore TokenStore, email string) (*http.Cookie, error
 		return nil, err
 	}
 
-	newToken := fmt.Sprintf("%x", token)
+	newToken := hex.EncodeToString(token)
 
 	// Keep track of user tokens in a map so we can revoke them if need be
 	// @NOTE this is not a good or secure way of holding the tokens. I would probably

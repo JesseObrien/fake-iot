@@ -19,7 +19,7 @@ func UserLoginHandler(tokenStore TokenStore, expectedEmail string, expectedPassw
 
 		if err := ctx.Bind(&loginRequest); err != nil {
 			// Log out the error to the logger to capture the actual error
-			log.Printf("error on user login %v\n", err)
+			log.Printf("error on user login %v", err)
 
 			// Do not show the actual error to the user to allow them to see
 			// anything about whether the email is valid/invalid, etc. to prevent anyone from
@@ -29,11 +29,6 @@ func UserLoginHandler(tokenStore TokenStore, expectedEmail string, expectedPassw
 
 		// @NOTE there would be code here to go to the database and pull the user record instead of using the hard
 		// coded values
-
-		// If the user credentials are empty
-		if loginRequest == (UserLoginRequest{}) {
-			return echo.NewHTTPError(http.StatusUnauthorized, "you must provide a username and password")
-		}
 
 		if err := checkEmailAndPassword(loginRequest.Email, loginRequest.Password, expectedEmail, expectedPassword); err != nil {
 			log.Printf("error user attempted to log in with invalid credentials: %v", err)
