@@ -6,11 +6,10 @@ This project uses the (golang-standards project-layout)[https://github.com/golan
 
 ## Requirements
 
-`docker`
-
-`make`
-
-`nodejs`
+- `docker`
+- `docker-compose`
+- `make`
+- `nodejs`
 
 ## Install
 
@@ -30,6 +29,15 @@ Using a little utility called (air)[https://github.com/cosmtrek/air] you can reb
 
 `make watch`
 
-Development API token (For the fakeiot CLI):
+### Development Notes
 
-`--token=882e8f9b-76a3-46fb-9f7e-bd536bdf5795`
+The user id and account ID for the user are hard coded as follows:
+
+- user_id: de7169a0-1ca1-4f18-8fb8-29d3a7cafd30
+- account_id: 47f3c307-6344-49e7-961c-ea200e950a89
+
+Run the fakeiot client with the hard coded token and account ID:
+
+`fakeiot --token=882e8f9b-76a3-46fb-9f7e-bd536bdf5795 --url="https://127.0.0.1:8080" --ca-cert=./certs/server.crt run --account-id=47f3c307-6344-49e7-961c-ea200e950a89 --users=100`
+
+The database file is seeded via [scripts/init-pg.sql](scripts/init-pg.sql)`.
