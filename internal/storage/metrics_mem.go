@@ -21,8 +21,8 @@ func NewMemAccountStore() *MemAccountStore {
 
 func (mas *MemAccountStore) WroteMetric(accountId, userId string) (bool, error) {
 	mas.mu.Lock()
+	defer mas.mu.Unlock()
 	metrics, ok := mas.metrics[accountId]
-	mas.mu.Unlock()
 
 	if !ok {
 		return false, fmt.Errorf("no metrics found for account")
@@ -40,22 +40,16 @@ func (mas *MemAccountStore) WroteMetric(accountId, userId string) (bool, error) 
 func (mas *MemAccountStore) Write(ctx context.Context, metric UserLoginMetric) error {
 	mas.mu.Lock()
 	defer mas.mu.Unlock()
-	if _, ok := mas.metrics[metric.AccountID]; !ok {
-		mas.metrics[metric.AccountID] = []UserLoginMetric{metric}
-		return nil
-	}
 
 	metrics := mas.metrics[metric.AccountID]
 	mas.metrics[metric.AccountID] = append(metrics, metric)
+
+	return nil
 }
 
 func (mas *MemAccountStore) CountByAccountId(ctx context.Context, accountId string) (int, error) {
 	mas.mu.Lock()
 	defer mas.mu.Unlock()
-
-	if _, ok := mas.metrics[accountId]; !ok {
-		return 0, nil
-	}
 
 	return len(mas.metrics[accountId]), nil
 }
