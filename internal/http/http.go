@@ -12,9 +12,23 @@ import (
 	"github.com/rakyll/statik/fs"
 )
 
+// As talked about in the design doc, I'm hard coding this. Ideally it would be stored
+// in the database and looked up on request
+const UserEmail = "test@example.com"
+
+// As in the design doc, I'm hard coding the password and will hash it on startup. Ideally
+// the bcrypt hash would be stored in the database along with the username.
+var UserPassword = "p@ssw0rd"
+
 func Run(database *sql.DB, listenAddress, certPath, keyPath, apiToken string) error {
 	e := echo.New()
 
+	// @NOTE CORS is only enabled like this for development
+	// it would be configured with the below line in production
+	// and properly have allowed origins, etc set.
+	// middleware.CORSWithConfig(middleware.CORSConfig{})
+
+	e.Use(middleware.CORS())
 	e.Pre(middleware.HTTPSRedirect())
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -28,10 +42,25 @@ func Run(database *sql.DB, listenAddress, certPath, keyPath, apiToken string) er
 
 	// New up the account store with a database connection
 	accountStore := storage.NewPgAccountStore(database)
+	tokenStore := storage.NewTokenStore()
 
-	e.GET("/*", echo.WrapHandler(http.StripPrefix("/", h)))
+	// Hash the hard coded password and pass it in to be checked
+	// @NOTE normally we'd hash the user's password on sign-up and store it in the DB
+	hashedpw, err := hashUserPassword(UserPassword)
+	if err != nil {
+		return err
+	}
 
 	e.POST("/metrics", IngestMetricsHandler(apiToken, accountStore))
+	e.POST("/login", UserLoginHandler(tokenStore, UserEmail, hashedpw))
+
+	// Protected routes
+	g := e.Group("auth")
+	g.Use(Authentication(tokenStore))
+	g.POST("/logout", UserLogOutHandler(tokenStore))
+
+	// the SPA route
+	e.GET("/*", echo.WrapHandler(http.StripPrefix("/", h)))
 
 	return e.StartTLS(listenAddress, certPath, keyPath)
 }

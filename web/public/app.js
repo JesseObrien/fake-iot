@@ -1,18 +1,47 @@
 "use strict";
 
 const App = () => {
-  // Set the user login for now based on false
+  const userToken = localStorage.getItem("user_token"); // Set the user login for now based on false
   // @TODO check the cookie and set the state based on the cookie
-  const [loggedIn, setLogin] = React.useState(false); //
 
+  const [loggedIn, setLoggedIn] = React.useState(userToken !== null);
+  const NullLoginError = {
+    message: null
+  }; // Using this to store and show the login error
+
+  const [loginError, setLoginError] = React.useState(NullLoginError);
   const [loginRequest, setLoginRequest] = React.useState({
     email: "",
     password: ""
   });
 
-  const handleLogin = () => {
-    // @TODO Handle the user login, send the loginRequest to the server, set a cookie and log the user in
-    console.log("login requested with credentials:", loginRequest);
+  const handleLogin = async e => {
+    e.preventDefault(); // Every attempt reset the error state
+
+    setLoginError(NullLoginError);
+
+    try {
+      const response = await axios.post("/login", loginRequest);
+
+      if (response.status == 200 && response.data?.access_token) {
+        localStorage.setItem("user_token", response.data.access_token);
+        setLoggedIn(true);
+      }
+    } catch (err) {
+      if (error.response) {
+        setLoginError(error.response.data);
+      }
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const response = await axios.post("/auth/logout");
+      localStorage.removeItem("user_token");
+      setLoggedIn(false);
+    } catch (err) {
+      console.log(error);
+    }
   };
 
   const onInputChange = (name, value) => {
@@ -23,12 +52,15 @@ const App = () => {
 
 
   if (loggedIn) {
-    return /*#__PURE__*/React.createElement(Dashboard, null);
+    return /*#__PURE__*/React.createElement(Dashboard, {
+      handleLogout: handleLogout
+    });
   } // If the user is not logged in, render the login form
 
 
-  return /*#__PURE__*/React.createElement("div", {
-    className: "login-form"
+  return /*#__PURE__*/React.createElement("form", {
+    className: "login-form",
+    onSubmit: handleLogin
   }, /*#__PURE__*/React.createElement("h1", null, "Sign Into Your Account"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     for: "email"
   }, "Email Address"), /*#__PURE__*/React.createElement("input", {
@@ -43,8 +75,10 @@ const App = () => {
     type: "password",
     id: "password",
     className: "field"
-  })), /*#__PURE__*/React.createElement("button", {
-    onClick: handleLogin,
+  })), loginError.message && /*#__PURE__*/React.createElement("div", {
+    className: "alert is-error"
+  }, "Error: ", loginError.message, " "), /*#__PURE__*/React.createElement("button", {
+    type: "submit",
     className: "button block"
   }, "Login to my Dashboard"));
 };

@@ -4,7 +4,6 @@ import (
 	"crypto/subtle"
 	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/jesseobrien/fake-iot/internal/storage"
 	"github.com/labstack/echo/v4"
@@ -18,8 +17,7 @@ func IngestMetricsHandler(apiToken string, accountStore storage.AccountStore) ec
 		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
 		// Extract the bearer token
-		authHeader := ctx.Request().Header.Get("Authorization")
-		token := strings.TrimPrefix(authHeader, "Bearer ")
+		token := getBearerTokenFromHeader(ctx)
 
 		// Check that the apiToken is a valid match, otherwise error out
 		if subtle.ConstantTimeCompare([]byte(token), []byte(apiToken)) == 0 {
