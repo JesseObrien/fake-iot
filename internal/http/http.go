@@ -16,8 +16,6 @@ import (
 // in the database and looked up on request
 const UserEmail = "test@example.com"
 
-type TokenStore map[string]string
-
 // As in the design doc, I'm hard coding the password and will hash it on startup. Ideally
 // the bcrypt hash would be stored in the database along with the username.
 var UserPassword = "p@ssw0rd"
@@ -44,7 +42,7 @@ func Run(database *sql.DB, listenAddress, certPath, keyPath, apiToken string) er
 
 	// New up the account store with a database connection
 	accountStore := storage.NewPgAccountStore(database)
-	tokenStore := TokenStore{}
+	tokenStore := storage.NewTokenStore()
 
 	// Hash the hard coded password and pass it in to be checked
 	// @NOTE normally we'd hash the user's password on sign-up and store it in the DB

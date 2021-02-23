@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/jesseobrien/fake-iot/internal/storage"
 	"github.com/labstack/echo/v4"
 )
 
@@ -16,7 +17,7 @@ type UserLoggedInResponse struct {
 	Token string `json:"access_token"`
 }
 
-func UserLoginHandler(tokenStore TokenStore, expectedEmail string, expectedPassword []byte) echo.HandlerFunc {
+func UserLoginHandler(tokenStore *storage.TokenStore, expectedEmail string, expectedPassword []byte) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 
 		loginRequest := UserLoginRequest{}

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/jesseobrien/fake-iot/internal/storage"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -47,7 +48,7 @@ func hashUserPassword(password string) ([]byte, error) {
 	return hashedpw, nil
 }
 
-func createUserToken(tokenStore TokenStore, email string) (string, error) {
+func createUserToken(tokenStore *storage.TokenStore, email string) (string, error) {
 	token := make([]byte, 32)
 	_, err := rand.Read(token)
 	if err != nil {
@@ -56,17 +57,17 @@ func createUserToken(tokenStore TokenStore, email string) (string, error) {
 
 	newToken := hex.EncodeToString(token)
 
-	tokenStore[newToken] = email
+	tokenStore.Write(newToken, email)
 
 	return newToken, nil
 }
 
-func Authentication(tokenStore TokenStore) echo.MiddlewareFunc {
+func Authentication(tokenStore *storage.TokenStore) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			token := getBearerTokenFromHeader(ctx)
 
-			if _, ok := tokenStore[token]; !ok {
+			if !tokenStore.IsValid(token) {
 				return echo.NewHTTPError(http.StatusUnauthorized, "invalid auth token")
 			}
 
@@ -75,8 +76,8 @@ func Authentication(tokenStore TokenStore) echo.MiddlewareFunc {
 	}
 }
 
-func expireLoginToken(ctx echo.Context, tokenStore TokenStore) {
+func expireLoginToken(ctx echo.Context, tokenStore *storage.TokenStore) {
 	token := getBearerTokenFromHeader(ctx)
 	// Delete the token from the registered tokens
-	delete(tokenStore, token)
+	tokenStore.Expire(token)
 }
