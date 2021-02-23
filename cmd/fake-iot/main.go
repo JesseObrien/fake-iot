@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
 	"log"
@@ -28,6 +29,16 @@ func main() {
 		log.Fatal("error: environment variable FAKEIOT_API_TOKEN is not set")
 	}
 
+	databaseUrl := os.Getenv("DATABASE_URL")
+	if databaseUrl == "" {
+		log.Fatal("error: environment variable DATABASE_URL is not set")
+	}
+
+	db, err := sql.Open("postgres", databaseUrl)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	listenAddress := fmt.Sprintf("%s:%s", httpListenHost, httpListenPort)
-	log.Fatal(http.Run(listenAddress, certPath, keyPath, apiToken))
+	log.Fatal(http.Run(db, listenAddress, certPath, keyPath, apiToken))
 }
