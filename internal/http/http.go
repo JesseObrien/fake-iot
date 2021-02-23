@@ -34,7 +34,6 @@ func Run(database *sql.DB, listenAddress, certPath, keyPath, apiToken string) er
 	e.Pre(middleware.HTTPSRedirect())
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.Use(middleware.CSRF())
 
 	statikFS, err := fs.New()
 	if err != nil {
