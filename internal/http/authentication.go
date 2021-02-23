@@ -7,18 +7,24 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
 )
 
-const AuthCookieName = "user_token"
-
 // Store user tokens in memory.
 // Note: Nominally these would be in a storage location like redis or something
 // to be able to query for them across multiple services
 var ErrInvalidAuthToken = errors.New("auth token is invalid")
+
+func getBearerTokenFromHeader(ctx echo.Context) string {
+	authHeader := ctx.Request().Header.Get("Authorization")
+
+	token := strings.TrimPrefix(authHeader, "Bearer ")
+
+	return token
+}
 
 func checkEmailAndPassword(email, password, expectedEmail string, hashedPassword []byte) error {
 	if subtle.ConstantTimeCompare([]byte(expectedEmail), []byte(email)) == 0 {
@@ -41,47 +47,26 @@ func hashUserPassword(password string) ([]byte, error) {
 	return hashedpw, nil
 }
 
-// Create a login cookie with a new token
-func createTokenCookie(tokenStore TokenStore, email string) (*http.Cookie, error) {
-
-	token := make([]byte, 26)
+func createUserToken(tokenStore TokenStore, email string) (string, error) {
+	token := make([]byte, 32)
 	_, err := rand.Read(token)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	newToken := hex.EncodeToString(token)
 
-	// Keep track of user tokens in a map so we can revoke them if need be
-	// @NOTE this is not a good or secure way of holding the tokens. I would probably
-	// store them in the DB user's table and be able to look them up/revoke them from there.
 	tokenStore[newToken] = email
 
-	cookie := new(http.Cookie)
-	cookie.Name = AuthCookieName
-	cookie.Value = newToken
-	cookie.Expires = time.Now().Add(30 * time.Hour)
-
-	cookie.SameSite = http.SameSiteStrictMode
-
-	// Ensure the cookie only works over HTTPS
-	cookie.Secure = true
-
-	return cookie, nil
+	return newToken, nil
 }
 
 func Authentication(tokenStore TokenStore) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			cookie, err := ctx.Cookie(AuthCookieName)
+			token := getBearerTokenFromHeader(ctx)
 
-			if err != nil {
-				return echo.NewHTTPError(http.StatusUnauthorized, "no auth cookie present")
-			}
-
-			// find the cookie value in the map
-			_, ok := tokenStore[cookie.Value]
-			if !ok {
+			if _, ok := tokenStore[token]; !ok {
 				return echo.NewHTTPError(http.StatusUnauthorized, "invalid auth token")
 			}
 
@@ -90,18 +75,8 @@ func Authentication(tokenStore TokenStore) echo.MiddlewareFunc {
 	}
 }
 
-func expireLoginToken(ctx echo.Context, tokenStore TokenStore) (*http.Cookie, error) {
-	cookie, err := ctx.Cookie(AuthCookieName)
-	if err != nil {
-		return nil, err
-	}
-
+func expireLoginToken(ctx echo.Context, tokenStore TokenStore) {
+	token := getBearerTokenFromHeader(ctx)
 	// Delete the token from the registered tokens
-	delete(tokenStore, cookie.Value)
-
-	// Set the max age of the cookie to 0, meaning it will expire immediately
-	cookie.MaxAge = -1
-	cookie.Expires = time.Now().Add(-24 * time.Hour)
-
-	return cookie, nil
+	delete(tokenStore, token)
 }

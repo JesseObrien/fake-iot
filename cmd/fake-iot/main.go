@@ -15,10 +15,10 @@ var certPath string
 var keyPath string
 
 func init() {
-	flag.StringVar(&httpListenHost, "host", "127.0.0.1", "-host=127.0.0.1")
-	flag.StringVar(&httpListenPort, "port", "8080", "-port=8080")
-	flag.StringVar(&certPath, "cert", "certs/server.crt", "-cert=path/server.crt")
-	flag.StringVar(&keyPath, "key", "certs/server.key", "-key=path/server.key")
+	flag.StringVar(&httpListenHost, "host", "127.0.0.1", "The host IP to bind the HTTP server to.")
+	flag.StringVar(&httpListenPort, "port", "8080", "The host port to bind the HTTP server to.")
+	flag.StringVar(&certPath, "cert", "certs/server.crt", "Path to the server's certificate for HTTPS.")
+	flag.StringVar(&keyPath, "key", "certs/server.key", "Path to the server's signing key for HTTPS.")
 	flag.Parse()
 }
 

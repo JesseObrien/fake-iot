@@ -1,21 +1,10 @@
 "use strict";
 
-axios.defaults.withCredentials = true;
-
-function getCookie(key) {
-  var b = document.cookie.match("(^|;)\\s*" + key + "\\s*=\\s*([^;]+)");
-  return b ? b.pop() : "";
-}
-
-function removeCookie(key) {
-  document.cookie = `${key}=;expires=${new Date().toUTCString()};path=/`;
-}
-
 const App = () => {
-  const userToken = getCookie("user_token"); // Set the user login for now based on false
+  const userToken = localStorage.getItem("user_token"); // Set the user login for now based on false
   // @TODO check the cookie and set the state based on the cookie
 
-  const [loggedIn, setLoggedIn] = React.useState(userToken !== "");
+  const [loggedIn, setLoggedIn] = React.useState(userToken !== null);
   const NullLoginError = {
     message: null
   }; // Using this to store and show the login error
@@ -26,35 +15,33 @@ const App = () => {
     password: ""
   });
 
-  const handleLogin = e => {
+  const handleLogin = async e => {
     e.preventDefault(); // Every attempt reset the error state
 
     setLoginError(NullLoginError);
-    axios.post("/login", loginRequest).then(response => {
-      if (response.status == 204) {
-        const cookie = getCookie("user_token");
-        setLoggedIn(cookie != "");
+
+    try {
+      const response = await axios.post("/login", loginRequest);
+
+      if (response.status == 200 && response.data?.access_token) {
+        localStorage.setItem("user_token", response.data.access_token);
+        setLoggedIn(true);
       }
-    }).catch(error => {
+    } catch (err) {
       if (error.response) {
         setLoginError(error.response.data);
       }
-    });
+    }
   };
 
-  const handleLogout = () => {
-    axios.post("/auth/logout").then(response => {
-      if (response.status === 204) {
-        setLoggedIn(false);
-      }
-    }).catch(error => {
-      console.log(error); // If the token is invalid, assume it was revoked and log the user out
-
-      if (error.response.status === 401) {
-        removeCookie("user_token");
-        setLoggedIn(false);
-      }
-    });
+  const handleLogout = async () => {
+    try {
+      const response = await axios.post("/auth/logout");
+      localStorage.removeItem("user_token");
+      setLoggedIn(false);
+    } catch (err) {
+      console.log(error);
+    }
   };
 
   const onInputChange = (name, value) => {

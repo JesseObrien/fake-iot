@@ -25,10 +25,16 @@ var UserPassword = "p@ssw0rd"
 func Run(database *sql.DB, listenAddress, certPath, keyPath, apiToken string) error {
 	e := echo.New()
 
+	// @NOTE CORS is only enabled like this for development
+	// it would be configured with the below line in production
+	// and properly have allowed origins, etc set.
+	// middleware.CORSWithConfig(middleware.CORSConfig{})
+
 	e.Use(middleware.CORS())
 	e.Pre(middleware.HTTPSRedirect())
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Use(middleware.CSRF())
 
 	statikFS, err := fs.New()
 	if err != nil {

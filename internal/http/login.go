@@ -12,6 +12,10 @@ type UserLoginRequest struct {
 	Password string `json:"password"`
 }
 
+type UserLoggedInResponse struct {
+	Token string `json:"access_token"`
+}
+
 func UserLoginHandler(tokenStore TokenStore, expectedEmail string, expectedPassword []byte) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 
@@ -35,15 +39,13 @@ func UserLoginHandler(tokenStore TokenStore, expectedEmail string, expectedPassw
 			return echo.NewHTTPError(http.StatusUnauthorized, "username or password is incorrect")
 		}
 
-		cookie, err := createTokenCookie(tokenStore, loginRequest.Email)
+		token, err := createUserToken(tokenStore, loginRequest.Email)
 
 		if err != nil {
-			log.Printf("error generating cookie for user: %v", err)
+			log.Printf("error generating token for user: %v", err)
 			return echo.NewHTTPError(http.StatusInternalServerError, "something went wrong on our end, check with a site administrator")
 		}
 
-		ctx.SetCookie(cookie)
-
-		return ctx.NoContent(http.StatusNoContent)
+		return ctx.JSON(http.StatusOK, UserLoggedInResponse{token})
 	}
 }
