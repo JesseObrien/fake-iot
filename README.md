@@ -15,6 +15,8 @@ This project uses the (golang-standards project-layout)[https://github.com/golan
 
 `make install`
 
+**After running `make install`, you must import the `./certs/RootCA.pem` as a trusted root authority into your browser before the websocket will work after building. Otherwise the websocket connection will not work.**
+
 ## Build
 
 `make build`

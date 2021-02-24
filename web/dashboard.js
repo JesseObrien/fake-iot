@@ -13,16 +13,55 @@ class AccountInfo {
   loginPercentage() {
     return (this.login_count / this.plan_limit) * 100;
   }
+
+  planCost() {
+    if (this.plan_type === "standard") {
+      return 100;
+    }
+
+    if (this.plan_type === "enterprise") {
+      return 1000;
+    }
+  }
 }
 
 const Dashboard = ({ handleLogout }) => {
   const [account, setAccount] = React.useState(new AccountInfo());
+  accountRef = React.createRef();
+  accountRef.current = account;
 
   const [accountUpgraded, setAccountUpgraded] = React.useState(false);
 
-  const handleAccountUpgrade = () => {
-    console.log("account upgraded");
-    setAccountUpgraded(true);
+  const ws = React.useRef(null);
+
+  const handleAccountUpgrade = async () => {
+    try {
+      const accountId = localStorage.getItem("user_account_id");
+
+      const response = await axios.post(`/accounts/${accountId}/upgrade`);
+
+      if (response.status === 200) {
+        // Make the popup appear
+        setAccountUpgraded(true);
+
+        const data = response.data;
+
+        upgradedAccount = new AccountInfo(
+          data.id,
+          data.plan_limit,
+          data.login_count,
+          data.plan_type
+        );
+        setAccount(upgradedAccount);
+
+        // Get rid of the pop up after 4 seconds
+        setInterval(() => {
+          setAccountUpgraded(false);
+        }, 4000);
+      }
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   React.useEffect(() => {
@@ -30,11 +69,16 @@ const Dashboard = ({ handleLogout }) => {
     let token = localStorage.getItem("user_token");
     let addr = window.location;
 
-    let uri = `wss://${addr.host}/accounts/${accountId}/updates`;
-    let ws = new WebSocket(uri);
+    if (!token) {
+      return;
+    }
 
-    ws.onopen = () => {
-      ws.send(
+    let uri = `wss://${addr.host}/accounts/${accountId}/updates`;
+    ws.current = new WebSocket(uri);
+
+    ws.current.onopen = () => {
+      console.log("websocket connected");
+      ws.current.send(
         JSON.stringify({
           operation: "account_updates_subscribe",
           token: `Bearer ${token}`,
@@ -42,7 +86,11 @@ const Dashboard = ({ handleLogout }) => {
       );
     };
 
-    ws.onmessage = (message) => {
+    ws.current.onclose = () => {
+      console.log("websocket closed");
+    };
+
+    ws.current.onmessage = (message) => {
       const parsedMessage = JSON.parse(message.data);
 
       if (parsedMessage.operation === "authorization_failure") {
@@ -65,19 +113,17 @@ const Dashboard = ({ handleLogout }) => {
       if (parsedMessage.operation === "account_metrics_updated") {
         const data = JSON.parse(parsedMessage.data);
 
-        setAccount(
-          new AccountInfo(
-            account.id,
-            account.plan_limit,
-            data.login_count,
-            account.plan_type
-          )
+        updatedAccount = new AccountInfo(
+          accountRef.current.id,
+          accountRef.current.plan_limit,
+          data.login_count,
+          accountRef.current.plan_type
         );
+        setAccount(updatedAccount);
       }
     };
-
-    return () => {
-      ws.close();
+    () => {
+      ws.current.close();
     };
   }, []);
 
@@ -112,7 +158,9 @@ const Dashboard = ({ handleLogout }) => {
       )}
 
       <div class="plan">
-        <header>{account.plan_type} - $100/Month</header>
+        <header>
+          {account.plan_type} - ${account.planCost()}/Month
+        </header>
 
         <div class="plan-content">
           <div class="progress-bar">
@@ -128,9 +176,11 @@ const Dashboard = ({ handleLogout }) => {
         </div>
 
         <footer>
-          <button onClick={handleAccountUpgrade} class="button is-success">
-            Upgrade to Enterprise Plan
-          </button>
+          {account.plan_type === "standard" && (
+            <button onClick={handleAccountUpgrade} class="button is-success">
+              Upgrade to Enterprise Plan
+            </button>
+          )}
         </footer>
       </div>
     </>

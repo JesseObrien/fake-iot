@@ -1,6 +1,7 @@
 .ONESHELL:
 .PHONY: install
 install:
+	$(MAKE) certs
 	go get -u github.com/rakyll/statik
 	go get -u github.com/cosmtrek/air
 	go mod vendor
@@ -32,11 +33,11 @@ clean:
 .PHONY: certs
 certs:
 	cd certs
-
-	openssl req -x509 -nodes -new -sha256 -days 1024 -newkey rsa:2048 -keyout RootCA.key -out RootCA.pem -subj "/C=US/CN=localhost"
+	rm -rf server.* RootCA.*
+	openssl req -x509 -nodes -new -sha256 -days 1024 -newkey rsa:2048 -keyout RootCA.key -out RootCA.pem -subj "/C=CA/CN=localhost"
 	openssl x509 -outform pem -in RootCA.pem -out RootCA.crt
-	openssl req -new -nodes -newkey rsa:2048 -keyout server.key -out server.csr -subj "/C=CA/ST=London/L=London/O=localhost/CN=localhost.local"
-	openssl x509 -req -sha256 -days 1024 -in server.csr -CA RootCA.pem -CAkey RootCA.key -CAcreateserial -extfile domains.ext -out server.crt
+	openssl req -new -nodes -newkey rsa:2048 -keyout server.key -out server.csr -subj "/C=CA/ST=London/L=London/O=localhost/CN=localhost"
+	openssl x509 -req -sha256 -days 1024 -in server.csr -CA RootCA.pem -CAkey RootCA.key -extfile domains.ext -CAcreateserial -out server.crt
 
 .PHONY: psql
 psql:
