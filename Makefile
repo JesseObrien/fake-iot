@@ -28,6 +28,8 @@ run:
 .PHONY: test
 test:
 	go test -race ./... 
+	cd web
+	npm run test
 
 .PHONY: watch
 watch:

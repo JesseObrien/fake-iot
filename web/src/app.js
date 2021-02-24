@@ -32,8 +32,9 @@ const App = () => {
         setLoggedIn(true);
       }
     } catch (err) {
-      if (error.response) {
-        setLoginError(error.response.data);
+      console.log(err);
+      if (err.response) {
+        setLoginError(err.response.data);
       }
     }
   };
@@ -64,20 +65,22 @@ const App = () => {
       <h1>Sign Into Your Account</h1>
 
       <div>
-        <label for="email">Email Address</label>
+        <label htmlFor="email">Email Address</label>
         <input
           onChange={(event) => onInputChange("email", event.target.value)}
           type="email"
+          data-testid="email"
           id="email"
           className="field"
         />
       </div>
 
       <div>
-        <label for="password">Password</label>
+        <label htmlFor="password">Password</label>
         <input
           onChange={(event) => onInputChange("password", event.target.value)}
           type="password"
+          data-testid="password"
           id="password"
           className="field"
         />
@@ -87,7 +90,7 @@ const App = () => {
         <div className="alert is-error">Error: {loginError.message} </div>
       )}
 
-      <button type="submit" className="button block">
+      <button data-testid="login-button" type="submit" className="button block">
         Login to my Dashboard
       </button>
     </form>
