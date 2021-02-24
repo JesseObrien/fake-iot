@@ -10,7 +10,7 @@ import (
 )
 
 // IngestMetricsHandler will take user metrics in and store them into postgres
-func IngestMetricsHandler(apiToken string, accountStore storage.AccountStore) echo.HandlerFunc {
+func IngestMetricsHandler(apiToken string, accountStore storage.MetricStore) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		// Set the content-type to `application/json` instead of the default
 		// `application/json;charset=utf-8` as the fakeiot cli doesn't like it

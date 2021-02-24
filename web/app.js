@@ -3,8 +3,6 @@
 const App = () => {
   const userToken = localStorage.getItem("user_token");
 
-  // Set the user login for now based on false
-  // @TODO check the cookie and set the state based on the cookie
   const [loggedIn, setLoggedIn] = React.useState(userToken !== null);
 
   const NullLoginError = { message: null };
@@ -26,8 +24,9 @@ const App = () => {
     try {
       const response = await axios.post("/login", loginRequest);
 
-      if (response.status == 200 && response.data?.access_token) {
+      if (response.status == 200) {
         localStorage.setItem("user_token", response.data.access_token);
+        localStorage.setItem("user_account_id", response.data.account_id);
         setLoggedIn(true);
       }
     } catch (err) {
@@ -40,12 +39,12 @@ const App = () => {
   const handleLogout = async () => {
     try {
       const response = await axios.post("/auth/logout");
-
-      localStorage.removeItem("user_token");
-      setLoggedIn(false);
     } catch (err) {
-      console.log(error);
+      console.log(err);
     }
+    localStorage.removeItem("user_token");
+    localStorage.removeItem("user_account_id");
+    setLoggedIn(false);
   };
 
   const onInputChange = (name, value) => {
