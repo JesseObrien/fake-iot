@@ -18,11 +18,12 @@ func TestIngestMetrics(t *testing.T) {
 	testUserId := "cbb3710e-8fa4-4f4e-9114-f27170887b16"
 	testPayload := fmt.Sprintf(`{"account_id":"%s","user_id":"%s","timestamp":"2021-02-19T15:33:10.737127483Z"}`, testAccountId, testUserId)
 
-	accountStore := storage.NewMemAccountStore()
+	metricStore := storage.NewMemMetricStore()
+	accountUpdateStore := storage.NewAccountUpdateStore()
 
 	testApiToken := "882e8f9b-76a3-46fb-9f7e-bd536bdf5795"
 
-	handler := IngestMetricsHandler(testApiToken, accountStore)
+	handler := IngestMetricsHandler(testApiToken, metricStore, accountUpdateStore)
 
 	// Set up the request context
 	e := echo.New()
@@ -36,7 +37,7 @@ func TestIngestMetrics(t *testing.T) {
 	require.NoError(t, handler(echoCtx))
 
 	assert.Equal(t, http.StatusOK, rec.Code)
-	written, err := accountStore.WroteMetric(testAccountId, testUserId)
+	written, err := metricStore.WroteMetric(testAccountId, testUserId)
 	assert.NoError(t, err)
 	assert.True(t, written)
 }
