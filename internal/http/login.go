@@ -8,13 +8,16 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+const UserAccountId = ""
+
 type UserLoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
 type UserLoggedInResponse struct {
-	Token string `json:"access_token"`
+	Token     string `json:"access_token"`
+	AccountId string `json:"account_id"`
 }
 
 func UserLoginHandler(tokenStore *storage.TokenStore, expectedEmail string, expectedPassword []byte) echo.HandlerFunc {
@@ -47,6 +50,10 @@ func UserLoginHandler(tokenStore *storage.TokenStore, expectedEmail string, expe
 			return echo.NewHTTPError(http.StatusInternalServerError, "something went wrong on our end, check with a site administrator")
 		}
 
-		return ctx.JSON(http.StatusOK, UserLoggedInResponse{token})
+		// @NOTE In the interest of brevity I'm hardcoding the account ID here. It would be looked up when the user
+		// logs in. I would send back the account ID and possibly the user ID as well to be able to make requests
+		accountId := "47f3c307-6344-49e7-961c-ea200e950a89"
+
+		return ctx.JSON(http.StatusOK, UserLoggedInResponse{token, accountId})
 	}
 }

@@ -28,8 +28,8 @@ func Run(database *sql.DB, listenAddress, certPath, keyPath, apiToken string) er
 	// and properly have allowed origins, etc set.
 	// middleware.CORSWithConfig(middleware.CORSConfig{})
 
-	e.Use(middleware.CORS())
 	e.Pre(middleware.HTTPSRedirect())
+	e.Use(middleware.CORS())
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
@@ -41,7 +41,8 @@ func Run(database *sql.DB, listenAddress, certPath, keyPath, apiToken string) er
 	h := http.FileServer(statikFS)
 
 	// New up the account store with a database connection
-	accountStore := storage.NewPgAccountStore(database)
+	metricStore := storage.NewPgMetricStore(database)
+	accountStore := storage.NewPgAccountStore(database, metricStore)
 	tokenStore := storage.NewTokenStore()
 
 	// Hash the hard coded password and pass it in to be checked
@@ -51,13 +52,21 @@ func Run(database *sql.DB, listenAddress, certPath, keyPath, apiToken string) er
 		return err
 	}
 
-	e.POST("/metrics", IngestMetricsHandler(apiToken, accountStore))
+	e.POST("/metrics", IngestMetricsHandler(apiToken, metricStore))
 	e.POST("/login", UserLoginHandler(tokenStore, UserEmail, hashedpw))
 
 	// Protected routes
 	g := e.Group("auth")
 	g.Use(Authentication(tokenStore))
 	g.POST("/logout", UserLogOutHandler(tokenStore))
+
+	agrp := e.Group("accounts")
+	agrp.Use(Authentication(tokenStore))
+	agrp.POST("/:id/upgrade", AccountUpgradeHandler(accountStore))
+
+	// @NOTE websockets cannot send headers, so this is unauthenticated but
+	// will expect a message with a valid token to stay open on connect
+	e.GET("/accounts/:id/updates", AccountUpdatesHandler(tokenStore, accountStore))
 
 	// the SPA route
 	e.GET("/*", echo.WrapHandler(http.StripPrefix("/", h)))

@@ -32,14 +32,11 @@ clean:
 .PHONY: certs
 certs:
 	cd certs
-	openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes \
-		-keyout server.key -out server.crt -extensions san -config \
-		<(echo "[req]"; 
-			echo distinguished_name=req; 
-			echo "[san]"; 
-			echo subjectAltName=DNS:example.com,DNS:www.example.net,IP:127.0.0.1
-			) \
-		-subj "/CN=example.com"
+
+	openssl req -x509 -nodes -new -sha256 -days 1024 -newkey rsa:2048 -keyout RootCA.key -out RootCA.pem -subj "/C=US/CN=localhost"
+	openssl x509 -outform pem -in RootCA.pem -out RootCA.crt
+	openssl req -new -nodes -newkey rsa:2048 -keyout server.key -out server.csr -subj "/C=CA/ST=London/L=London/O=localhost/CN=localhost.local"
+	openssl x509 -req -sha256 -days 1024 -in server.csr -CA RootCA.pem -CAkey RootCA.key -CAcreateserial -extfile domains.ext -out server.crt
 
 .PHONY: psql
 psql:

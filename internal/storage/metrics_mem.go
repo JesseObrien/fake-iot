@@ -6,20 +6,20 @@ import (
 	"sync"
 )
 
-// MemAccountStore is a memory implementation of the account store
+// MemMetricStore is a memory implementation of the account store
 // to use for testing purposes, etc.
-type MemAccountStore struct {
+type MemMetricStore struct {
 	metrics map[string][]UserLoginMetric
 	mu      sync.Mutex
 }
 
-func NewMemAccountStore() *MemAccountStore {
-	return &MemAccountStore{
+func NewMemMetricStore() *MemMetricStore {
+	return &MemMetricStore{
 		metrics: map[string][]UserLoginMetric{},
 	}
 }
 
-func (mas *MemAccountStore) WroteMetric(accountId, userId string) (bool, error) {
+func (mas *MemMetricStore) WroteMetric(accountId, userId string) (bool, error) {
 	mas.mu.Lock()
 	defer mas.mu.Unlock()
 	metrics, ok := mas.metrics[accountId]
@@ -37,7 +37,7 @@ func (mas *MemAccountStore) WroteMetric(accountId, userId string) (bool, error) 
 	return false, fmt.Errorf("could not find write for account id: %s, user_id: %s", accountId, userId)
 }
 
-func (mas *MemAccountStore) Write(ctx context.Context, metric UserLoginMetric) error {
+func (mas *MemMetricStore) Write(ctx context.Context, metric UserLoginMetric) error {
 	mas.mu.Lock()
 	defer mas.mu.Unlock()
 
@@ -47,7 +47,7 @@ func (mas *MemAccountStore) Write(ctx context.Context, metric UserLoginMetric) e
 	return nil
 }
 
-func (mas *MemAccountStore) CountByAccountId(ctx context.Context, accountId string) (int, error) {
+func (mas *MemMetricStore) CountByAccountId(ctx context.Context, accountId string) (int, error) {
 	mas.mu.Lock()
 	defer mas.mu.Unlock()
 
