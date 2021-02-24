@@ -3,6 +3,9 @@ version: "3"
 services:
   postgres:
     image: postgres:alpine
+    container_name: fakeiot-postgres
+    networks:
+      - fakeiot
     ports:
       - 5432:5432
     volumes:
@@ -10,3 +13,7 @@ services:
     environment:
       POSTGRES_USER: testuser
       POSTGRES_PASSWORD: abcd1234
+
+networks:
+  fakeiot:
+    name: fake-iot

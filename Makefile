@@ -14,7 +14,17 @@ build:
 	rm -rf ./statik
 	statik -f -src=./public
 	cd ..
+	$(MAKE) certs
 	go build -ldflags="-s -w" -o ./tmp/fake-iot ./cmd/fake-iot/main.go
+
+.PHONY: docker-build
+docker-build:
+	docker build -t jesseobrien/fake-iot .
+
+.PHONY: run
+run:
+	docker-compose up -d
+	docker run -d --network="fake-iot" --name=fake-iot -p 8080:8080 jesseobrien/fake-iot:latest
 
 .PHONY: test
 test:
