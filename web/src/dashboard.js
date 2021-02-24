@@ -140,36 +140,36 @@ const Dashboard = ({ handleLogout }) => {
 
   return (
     <>
-      <header class="top-nav">
-        <h1>User Management Dashboard</h1>
-        <button onClick={handleLogout} class="button is-border">
+      <header className="top-nav">
+        <h1 data-testid="dashboard-title">User Management Dashboard</h1>
+        <button onClick={handleLogout} className="button is-border">
           Logout
         </button>
       </header>
 
       {account.limitReached() && (
-        <div class="alert is-error">
+        <div className="alert is-error">
           You have exceeded the maximum number of users for your account, please
           upgrade your plan to increaese the limit.
         </div>
       )}
 
       {accountUpgraded && (
-        <div class="alert is-success">
+        <div className="alert is-success">
           Your account has been upgraded successfully!
         </div>
       )}
 
-      <div class="plan">
+      <div className="plan">
         <header>
           {account.plan_type} - ${account.planCost()}/Month
         </header>
 
-        <div class="plan-content">
-          <div class="progress-bar">
+        <div className="plan-content">
+          <div className="progress-bar">
             <div
               style={{ width: `${account.loginPercentage()}%` }}
-              class="progress-bar-usage"
+              className="progress-bar-usage"
             ></div>
           </div>
 
@@ -180,7 +180,10 @@ const Dashboard = ({ handleLogout }) => {
 
         <footer>
           {account.plan_type === "standard" && (
-            <button onClick={handleAccountUpgrade} class="button is-success">
+            <button
+              onClick={handleAccountUpgrade}
+              className="button is-success"
+            >
               Upgrade to Enterprise Plan
             </button>
           )}
