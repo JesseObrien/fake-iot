@@ -14,34 +14,73 @@ class AccountInfo {
     return this.login_count / this.plan_limit * 100;
   }
 
+  planCost() {
+    if (this.plan_type === "standard") {
+      return 100;
+    }
+
+    if (this.plan_type === "enterprise") {
+      return 1000;
+    }
+  }
+
 }
 
 const Dashboard = ({
   handleLogout
 }) => {
   const [account, setAccount] = React.useState(new AccountInfo());
+  accountRef = React.createRef();
+  accountRef.current = account;
   const [accountUpgraded, setAccountUpgraded] = React.useState(false);
+  const ws = React.useRef(null);
 
-  const handleAccountUpgrade = () => {
-    console.log("account upgraded");
-    setAccountUpgraded(true);
+  const handleAccountUpgrade = async () => {
+    try {
+      const accountId = localStorage.getItem("user_account_id");
+      const response = await axios.post(`/accounts/${accountId}/upgrade`);
+
+      if (response.status === 200) {
+        // Make the popup appear
+        setAccountUpgraded(true);
+        const data = response.data;
+        upgradedAccount = new AccountInfo(data.id, data.plan_limit, data.login_count, data.plan_type);
+        setAccount(upgradedAccount); // Get rid of the pop up after 4 seconds
+
+        setInterval(() => {
+          setAccountUpgraded(false);
+        }, 4000);
+      }
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   React.useEffect(() => {
     let accountId = localStorage.getItem("user_account_id");
     let token = localStorage.getItem("user_token");
     let addr = window.location;
-    let uri = `wss://${addr.host}/accounts/${accountId}/updates`;
-    let ws = new WebSocket(uri);
 
-    ws.onopen = () => {
-      ws.send(JSON.stringify({
+    if (!token) {
+      return;
+    }
+
+    let uri = `wss://${addr.host}/accounts/${accountId}/updates`;
+    ws.current = new WebSocket(uri);
+
+    ws.current.onopen = () => {
+      console.log("websocket connected");
+      ws.current.send(JSON.stringify({
         operation: "account_updates_subscribe",
         token: `Bearer ${token}`
       }));
     };
 
-    ws.onmessage = message => {
+    ws.current.onclose = () => {
+      console.log("websocket closed");
+    };
+
+    ws.current.onmessage = message => {
       const parsedMessage = JSON.parse(message.data);
 
       if (parsedMessage.operation === "authorization_failure") {
@@ -56,12 +95,13 @@ const Dashboard = ({
 
       if (parsedMessage.operation === "account_metrics_updated") {
         const data = JSON.parse(parsedMessage.data);
-        setAccount(new AccountInfo(account.id, account.plan_limit, data.login_count, account.plan_type));
+        updatedAccount = new AccountInfo(accountRef.current.id, accountRef.current.plan_limit, data.login_count, accountRef.current.plan_type);
+        setAccount(updatedAccount);
       }
     };
 
-    return () => {
-      ws.close();
+    () => {
+      ws.current.close();
     };
   }, []);
 
@@ -80,7 +120,7 @@ const Dashboard = ({
     class: "alert is-success"
   }, "Your account has been upgraded successfully!"), /*#__PURE__*/React.createElement("div", {
     class: "plan"
-  }, /*#__PURE__*/React.createElement("header", null, account.plan_type, " - $100/Month"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("header", null, account.plan_type, " - $", account.planCost(), "/Month"), /*#__PURE__*/React.createElement("div", {
     class: "plan-content"
   }, /*#__PURE__*/React.createElement("div", {
     class: "progress-bar"
@@ -89,7 +129,7 @@ const Dashboard = ({
       width: `${account.loginPercentage()}%`
     },
     class: "progress-bar-usage"
-  })), /*#__PURE__*/React.createElement("h3", null, "Users: ", account.login_count, "/", account.plan_limit)), /*#__PURE__*/React.createElement("footer", null, /*#__PURE__*/React.createElement("button", {
+  })), /*#__PURE__*/React.createElement("h3", null, "Users: ", account.login_count, "/", account.plan_limit)), /*#__PURE__*/React.createElement("footer", null, account.plan_type === "standard" && /*#__PURE__*/React.createElement("button", {
     onClick: handleAccountUpgrade,
     class: "button is-success"
   }, "Upgrade to Enterprise Plan"))));

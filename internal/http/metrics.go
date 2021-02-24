@@ -10,7 +10,7 @@ import (
 )
 
 // IngestMetricsHandler will take user metrics in and store them into postgres
-func IngestMetricsHandler(apiToken string, accountStore storage.MetricStore) echo.HandlerFunc {
+func IngestMetricsHandler(apiToken string, accountStore storage.MetricStore, accountUpdateStore *storage.AccountUpdateStore) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		// Set the content-type to `application/json` instead of the default
 		// `application/json;charset=utf-8` as the fakeiot cli doesn't like it
@@ -39,6 +39,15 @@ func IngestMetricsHandler(apiToken string, accountStore storage.MetricStore) ech
 		if err := accountStore.Write(echoCtx, metric); err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
+
+		// send the updated account metrics to all subscribers
+		updatedCount, err := accountStore.CountByAccountId(ctx.Request().Context(), metric.AccountID)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+
+		update := storage.AccountUpdate{AccountId: metric.AccountID, LoginCount: updatedCount}
+		accountUpdateStore.Fanout(metric.AccountID, update)
 
 		return ctx.JSON(http.StatusOK, "consumed metric")
 	}

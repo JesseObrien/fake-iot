@@ -44,6 +44,7 @@ func Run(database *sql.DB, listenAddress, certPath, keyPath, apiToken string) er
 	metricStore := storage.NewPgMetricStore(database)
 	accountStore := storage.NewPgAccountStore(database, metricStore)
 	tokenStore := storage.NewTokenStore()
+	accountUpdateStore := storage.NewAccountUpdateStore()
 
 	// Hash the hard coded password and pass it in to be checked
 	// @NOTE normally we'd hash the user's password on sign-up and store it in the DB
@@ -52,7 +53,7 @@ func Run(database *sql.DB, listenAddress, certPath, keyPath, apiToken string) er
 		return err
 	}
 
-	e.POST("/metrics", IngestMetricsHandler(apiToken, metricStore))
+	e.POST("/metrics", IngestMetricsHandler(apiToken, metricStore, accountUpdateStore))
 	e.POST("/login", UserLoginHandler(tokenStore, UserEmail, hashedpw))
 
 	// Protected routes
@@ -66,7 +67,7 @@ func Run(database *sql.DB, listenAddress, certPath, keyPath, apiToken string) er
 
 	// @NOTE websockets cannot send headers, so this is unauthenticated but
 	// will expect a message with a valid token to stay open on connect
-	e.GET("/accounts/:id/updates", AccountUpdatesHandler(tokenStore, accountStore))
+	e.GET("/accounts/:id/updates", AccountUpdatesHandler(tokenStore, accountStore, accountUpdateStore))
 
 	// the SPA route
 	e.GET("/*", echo.WrapHandler(http.StripPrefix("/", h)))

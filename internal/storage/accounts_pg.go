@@ -30,7 +30,7 @@ func (pas *PgAccountStore) GetAccountInfo(ctx context.Context, accountId string)
 	case AccountPlanTypeStandard:
 		info.PlanLimit = int(AccountPlanStandardLimit)
 	case AccountPlanTypeEnterprise:
-		info.PlanLimit = int(AccountPlanStandardLimit)
+		info.PlanLimit = int(AccountPlanEnterpriseLimit)
 	}
 
 	loginCount, err := pas.metricStore.CountByAccountId(ctx, accountId)
