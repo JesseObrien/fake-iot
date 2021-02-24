@@ -1,16 +1,18 @@
-"use strict";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import Dashboard from "./dashboard.js";
 
 const App = () => {
   const userToken = localStorage.getItem("user_token");
 
-  const [loggedIn, setLoggedIn] = React.useState(userToken !== null);
+  const [loggedIn, setLoggedIn] = useState(userToken !== null);
 
   const NullLoginError = { message: null };
 
   // Using this to store and show the login error
-  const [loginError, setLoginError] = React.useState(NullLoginError);
+  const [loginError, setLoginError] = useState(NullLoginError);
 
-  const [loginRequest, setLoginRequest] = React.useState({
+  const [loginRequest, setLoginRequest] = useState({
     email: "",
     password: "",
   });
@@ -91,3 +93,5 @@ const App = () => {
     </form>
   );
 };
+
+export default App;
