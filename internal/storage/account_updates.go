@@ -14,9 +14,12 @@ type AccountUpdate struct {
 type AccountUpdateSubscription struct {
 	SubscriptionReference string
 	Updates               chan AccountUpdate
+
 	// the list of subscriptions this subscription belongs to. used for unsubscribe
 	subscriptionList *[]AccountUpdateSubscription
-	mu               *sync.Mutex
+
+	// Link to the top level mutex in the update store to lock when we're unsubscribing
+	mu *sync.Mutex
 }
 
 func (aus *AccountUpdateSubscription) Unsubscribe() {
@@ -38,20 +41,25 @@ func (aus *AccountUpdateSubscription) Unsubscribe() {
 
 type AccountUpdateStore struct {
 	accountUpdates map[string][]AccountUpdateSubscription
+	mu             *sync.Mutex
 }
 
 func NewAccountUpdateStore() *AccountUpdateStore {
 	return &AccountUpdateStore{
 		map[string][]AccountUpdateSubscription{},
+		&sync.Mutex{},
 	}
 }
 
 func (aus *AccountUpdateStore) Subscribe(accountId string) *AccountUpdateSubscription {
+	aus.mu.Lock()
+	defer aus.mu.Unlock()
 	updates := aus.accountUpdates[accountId]
 	newSubscription := AccountUpdateSubscription{
 		SubscriptionReference: uuid.New().String(),
 		Updates:               make(chan AccountUpdate),
 		subscriptionList:      &updates,
+		mu:                    aus.mu,
 	}
 	aus.accountUpdates[accountId] = append(updates, newSubscription)
 	return &newSubscription
