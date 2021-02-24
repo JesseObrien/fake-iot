@@ -9,19 +9,34 @@ This project uses the (golang-standards project-layout)[https://github.com/golan
 - `docker`
 - `docker-compose`
 - `make`
+
+**Development**
+
 - `nodejs`
 
-## Install
+**After running `make install` or `make docker-build`, you must import the `./certs/RootCA.pem` as a trusted root authority into your browser before the websocket will work after building. Otherwise the websocket connection will not work.**
+
+## Run
+
+To run the project without doing development run:
+
+1. `make docker-build`
+2. `make run`
+3. Visit [https://localhost:8080](https://localhost:8080) in your browser **(Note: Do install the generated certificate into your browser as instructed above!)**
+4. Install the the [fakeiot binary](https://github.com/gravitational/fakeiot) on your machine so you can run the commannd to insert the metrics and see them updating on the front-end.
+5. `fakeiot --token=882e8f9b-76a3-46fb-9f7e-bd536bdf5795 --url="https://127.0.0.1:8080" --ca-cert=./certs/server.crt run --users=100 --account-id=47f3c307-6344-49e7-961c-ea200e950a89`
+
+## Development
+
+### Install
 
 `make install`
 
-**After running `make install`, you must import the `./certs/RootCA.pem` as a trusted root authority into your browser before the websocket will work after building. Otherwise the websocket connection will not work.**
-
-## Build
+### Build
 
 `make build`
 
-## Development
+###
 
 Using docker-compose, you'll need to be running a postgres database.
 
