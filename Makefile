@@ -14,7 +14,6 @@ build:
 	rm -rf ./statik
 	statik -f -src=./public
 	cd ..
-	$(MAKE) certs
 	go build -ldflags="-s -w" -o ./tmp/fake-iot ./cmd/fake-iot/main.go
 
 .PHONY: docker-build

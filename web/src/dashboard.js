@@ -1,3 +1,5 @@
+import React, { createRef, useRef, useEffect, useState } from "react";
+
 class AccountInfo {
   constructor(id, plan_limit, login_count, plan_type) {
     this.id = id;
@@ -26,13 +28,13 @@ class AccountInfo {
 }
 
 const Dashboard = ({ handleLogout }) => {
-  const [account, setAccount] = React.useState(new AccountInfo());
-  accountRef = React.createRef();
+  const [account, setAccount] = useState(new AccountInfo());
+  const accountRef = useRef();
   accountRef.current = account;
 
-  const [accountUpgraded, setAccountUpgraded] = React.useState(false);
+  const [accountUpgraded, setAccountUpgraded] = useState(false);
 
-  const ws = React.useRef(null);
+  const ws = useRef(null);
 
   const handleAccountUpgrade = async () => {
     try {
@@ -53,6 +55,7 @@ const Dashboard = ({ handleLogout }) => {
           data.plan_type
         );
         setAccount(upgradedAccount);
+        accountRef.current = upgradedAccount;
 
         // Get rid of the pop up after 4 seconds
         setInterval(() => {
@@ -64,7 +67,7 @@ const Dashboard = ({ handleLogout }) => {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     let accountId = localStorage.getItem("user_account_id");
     let token = localStorage.getItem("user_token");
     let addr = window.location;
@@ -100,26 +103,26 @@ const Dashboard = ({ handleLogout }) => {
 
       if (parsedMessage.operation === "account_info_response") {
         const data = JSON.parse(parsedMessage.data);
-        setAccount(
-          new AccountInfo(
-            data.id,
-            data.plan_limit,
-            data.login_count,
-            data.plan_type
-          )
+        const updatedAccount = new AccountInfo(
+          data.id,
+          data.plan_limit,
+          data.login_count,
+          data.plan_type
         );
+        setAccount(updatedAccount);
+        accountRef.current = updatedAccount;
       }
 
       if (parsedMessage.operation === "account_metrics_updated") {
         const data = JSON.parse(parsedMessage.data);
-
-        updatedAccount = new AccountInfo(
+        const updatedAccount = new AccountInfo(
           accountRef.current.id,
           accountRef.current.plan_limit,
           data.login_count,
           accountRef.current.plan_type
         );
         setAccount(updatedAccount);
+        accountRef.current = updatedAccount;
       }
     };
     () => {
@@ -186,3 +189,5 @@ const Dashboard = ({ handleLogout }) => {
     </>
   );
 };
+
+export default Dashboard;
