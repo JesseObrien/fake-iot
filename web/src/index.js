@@ -2,6 +2,7 @@ import React from "react";
 import axios from "axios";
 import ReactDOM from "react-dom";
 import App from "./app.js";
+import { SessionProvider } from "./svc/use_session.js";
 
 axios.interceptors.request.use((config) => {
   // Authorization Token
@@ -15,4 +16,9 @@ axios.interceptors.request.use((config) => {
 
 const AppContainer = document.querySelector("#app-container");
 
-ReactDOM.render(<App />, AppContainer);
+ReactDOM.render(
+  <SessionProvider>
+    <App />
+  </SessionProvider>,
+  AppContainer
+);

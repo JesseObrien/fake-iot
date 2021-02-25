@@ -28,9 +28,11 @@ func (pas *PgAccountStore) GetAccountInfo(ctx context.Context, accountId string)
 
 	switch info.PlanType {
 	case AccountPlanTypeStandard:
-		info.PlanLimit = int(AccountPlanStandardLimit)
+		info.PlanLimit = AccountPlanStandardLimit
 	case AccountPlanTypeEnterprise:
-		info.PlanLimit = int(AccountPlanEnterpriseLimit)
+		info.PlanLimit = AccountPlanEnterpriseLimit
+	default:
+		return info, fmt.Errorf("plan type %s is not valid", info.PlanType)
 	}
 
 	loginCount, err := pas.metricStore.CountByAccountId(ctx, accountId)

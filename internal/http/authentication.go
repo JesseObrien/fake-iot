@@ -48,7 +48,7 @@ func hashUserPassword(password string) ([]byte, error) {
 	return hashedpw, nil
 }
 
-func createUserToken(tokenStore *storage.TokenStore, email string) (string, error) {
+func createUserToken(tokenStore *storage.TokenStore, email, accountId string) (string, error) {
 	token := make([]byte, 32)
 	_, err := rand.Read(token)
 	if err != nil {
@@ -57,7 +57,7 @@ func createUserToken(tokenStore *storage.TokenStore, email string) (string, erro
 
 	newToken := hex.EncodeToString(token)
 
-	tokenStore.Write(newToken, email)
+	tokenStore.Write(newToken, email, accountId)
 
 	return newToken, nil
 }

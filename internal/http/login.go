@@ -8,8 +8,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-const UserAccountId = ""
-
 type UserLoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -20,7 +18,7 @@ type UserLoggedInResponse struct {
 	AccountId string `json:"account_id"`
 }
 
-func UserLoginHandler(tokenStore *storage.TokenStore, expectedEmail string, expectedPassword []byte) echo.HandlerFunc {
+func UserLoginHandler(tokenStore *storage.TokenStore, expectedEmail string, expectedPassword []byte, accountId string) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 
 		loginRequest := UserLoginRequest{}
@@ -43,7 +41,7 @@ func UserLoginHandler(tokenStore *storage.TokenStore, expectedEmail string, expe
 			return echo.NewHTTPError(http.StatusUnauthorized, "username or password is incorrect")
 		}
 
-		token, err := createUserToken(tokenStore, loginRequest.Email)
+		token, err := createUserToken(tokenStore, loginRequest.Email, accountId)
 
 		if err != nil {
 			log.Printf("error generating token for user: %v", err)

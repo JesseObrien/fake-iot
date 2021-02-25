@@ -14,10 +14,10 @@ const (
 )
 
 type AccountInfo struct {
-	Id         string          `json:"id"`
-	PlanType   AccountPlanType `json:"plan_type"`
-	LoginCount int             `json:"login_count"`
-	PlanLimit  int             `json:"plan_limit"`
+	Id         string           `json:"id"`
+	PlanType   AccountPlanType  `json:"plan_type"`
+	LoginCount int              `json:"login_count"`
+	PlanLimit  AccountPlanLimit `json:"plan_limit"`
 }
 
 type AccountStore interface {

@@ -1582,37 +1582,37 @@ function createInstance(defaultConfig) {
 }
 
 // Create the default instance to be exported
-var axios$1 = createInstance(defaults_1);
+var axios = createInstance(defaults_1);
 
 // Expose Axios class to allow class inheritance
-axios$1.Axios = Axios_1;
+axios.Axios = Axios_1;
 
 // Factory for creating new instances
-axios$1.create = function create(instanceConfig) {
-  return createInstance(mergeConfig(axios$1.defaults, instanceConfig));
+axios.create = function create(instanceConfig) {
+  return createInstance(mergeConfig(axios.defaults, instanceConfig));
 };
 
 // Expose Cancel & CancelToken
-axios$1.Cancel = Cancel_1;
-axios$1.CancelToken = CancelToken_1;
-axios$1.isCancel = isCancel;
+axios.Cancel = Cancel_1;
+axios.CancelToken = CancelToken_1;
+axios.isCancel = isCancel;
 
 // Expose all/spread
-axios$1.all = function all(promises) {
+axios.all = function all(promises) {
   return Promise.all(promises);
 };
-axios$1.spread = spread;
+axios.spread = spread;
 
 // Expose isAxiosError
-axios$1.isAxiosError = isAxiosError;
+axios.isAxiosError = isAxiosError;
 
-var axios_1 = axios$1;
+var axios_1 = axios;
 
 // Allow use of default import syntax in TypeScript
-var _default = axios$1;
+var _default = axios;
 axios_1.default = _default;
 
-var axios$2 = axios_1;
+var axios$1 = axios_1;
 
 /** @license React v0.19.1
  * scheduler.production.min.js
@@ -1975,21 +1975,6 @@ function checkDCE() {
   module.exports = reactDom_production_min;
 }
 });
-
-function _defineProperty(obj, key, value) {
-  if (key in obj) {
-    Object.defineProperty(obj, key, {
-      value: value,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    });
-  } else {
-    obj[key] = value;
-  }
-
-  return obj;
-}
 
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) {
   try {
@@ -2837,255 +2822,57 @@ try {
 
 var regenerator = runtime_1;
 
-function _classCallCheck(instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
-}
-
-function _defineProperties(target, props) {
-  for (var i = 0; i < props.length; i++) {
-    var descriptor = props[i];
-    descriptor.enumerable = descriptor.enumerable || false;
-    descriptor.configurable = true;
-    if ("value" in descriptor) descriptor.writable = true;
-    Object.defineProperty(target, descriptor.key, descriptor);
-  }
-}
-
-function _createClass(Constructor, protoProps, staticProps) {
-  if (protoProps) _defineProperties(Constructor.prototype, protoProps);
-  if (staticProps) _defineProperties(Constructor, staticProps);
-  return Constructor;
-}
-
-var AccountInfo = /*#__PURE__*/function () {
-  function AccountInfo(id, plan_limit, login_count, plan_type) {
-    _classCallCheck(this, AccountInfo);
-
-    this.id = id;
-    this.plan_limit = plan_limit;
-    this.login_count = login_count;
-    this.plan_type = plan_type;
-  }
-
-  _createClass(AccountInfo, [{
-    key: "limitReached",
-    value: function limitReached() {
-      return this.plan_limit == this.login_count;
-    }
-  }, {
-    key: "loginPercentage",
-    value: function loginPercentage() {
-      return this.login_count / this.plan_limit * 100;
-    }
-  }, {
-    key: "planCost",
-    value: function planCost() {
-      if (this.plan_type === "standard") {
-        return 100;
-      }
-
-      if (this.plan_type === "enterprise") {
-        return 1000;
-      }
-    }
-  }]);
-
-  return AccountInfo;
-}();
-
-var Dashboard = function Dashboard(_ref) {
-  var handleLogout = _ref.handleLogout;
-
-  var _useState = react.useState(new AccountInfo()),
-      _useState2 = _slicedToArray(_useState, 2),
-      account = _useState2[0],
-      setAccount = _useState2[1];
-
-  var accountRef = react.useRef();
-  accountRef.current = account;
-
-  var _useState3 = react.useState(false),
-      _useState4 = _slicedToArray(_useState3, 2),
-      accountUpgraded = _useState4[0],
-      setAccountUpgraded = _useState4[1];
-
-  var ws = react.useRef(null);
-
-  var handleAccountUpgrade = /*#__PURE__*/function () {
-    var _ref2 = _asyncToGenerator( /*#__PURE__*/regenerator.mark(function _callee() {
-      var accountId, response, data;
-      return regenerator.wrap(function _callee$(_context) {
-        while (1) {
-          switch (_context.prev = _context.next) {
-            case 0:
-              _context.prev = 0;
-              accountId = localStorage.getItem("user_account_id");
-              _context.next = 4;
-              return axios.post("/accounts/".concat(accountId, "/upgrade"));
-
-            case 4:
-              response = _context.sent;
-
-              if (response.status === 200) {
-                // Make the popup appear
-                setAccountUpgraded(true);
-                data = response.data;
-                upgradedAccount = new AccountInfo(data.id, data.plan_limit, data.login_count, data.plan_type);
-                setAccount(upgradedAccount);
-                accountRef.current = upgradedAccount; // Get rid of the pop up after 4 seconds
-
-                setInterval(function () {
-                  setAccountUpgraded(false);
-                }, 4000);
-              }
-
-              _context.next = 11;
-              break;
-
-            case 8:
-              _context.prev = 8;
-              _context.t0 = _context["catch"](0);
-              console.log(_context.t0);
-
-            case 11:
-            case "end":
-              return _context.stop();
-          }
-        }
-      }, _callee, null, [[0, 8]]);
-    }));
-
-    return function handleAccountUpgrade() {
-      return _ref2.apply(this, arguments);
-    };
-  }();
-
-  react.useEffect(function () {
-    var accountId = localStorage.getItem("user_account_id");
-    var token = localStorage.getItem("user_token");
-    var addr = window.location;
-
-    if (!token) {
-      return;
-    }
-
-    var uri = "wss://".concat(addr.host, "/accounts/").concat(accountId, "/updates");
-    ws.current = new WebSocket(uri);
-
-    ws.current.onopen = function () {
-      console.log("websocket connected");
-      ws.current.send(JSON.stringify({
-        operation: "account_updates_subscribe",
-        token: "Bearer ".concat(token)
-      }));
-    };
-
-    ws.current.onclose = function () {
-      console.log("websocket closed");
-    };
-
-    ws.current.onmessage = function (message) {
-      var parsedMessage = JSON.parse(message.data);
-
-      if (parsedMessage.operation === "authorization_failure") {
-        handleLogout();
-        return;
-      }
-
-      if (parsedMessage.operation === "account_info_response") {
-        var data = JSON.parse(parsedMessage.data);
-        var updatedAccount = new AccountInfo(data.id, data.plan_limit, data.login_count, data.plan_type);
-        setAccount(updatedAccount);
-        accountRef.current = updatedAccount;
-      }
-
-      if (parsedMessage.operation === "account_metrics_updated") {
-        var _data = JSON.parse(parsedMessage.data);
-
-        var _updatedAccount = new AccountInfo(accountRef.current.id, accountRef.current.plan_limit, _data.login_count, accountRef.current.plan_type);
-
-        setAccount(_updatedAccount);
-        accountRef.current = _updatedAccount;
-      }
-    };
-  }, []);
-
-  if (!account) {
-    return /*#__PURE__*/react.createElement(react.Fragment, null, /*#__PURE__*/react.createElement("div", null, "Loading..."));
-  }
-
-  return /*#__PURE__*/react.createElement(react.Fragment, null, /*#__PURE__*/react.createElement("header", {
-    "class": "top-nav"
-  }, /*#__PURE__*/react.createElement("h1", null, "User Management Dashboard"), /*#__PURE__*/react.createElement("button", {
-    onClick: handleLogout,
-    "class": "button is-border"
-  }, "Logout")), account.limitReached() && /*#__PURE__*/react.createElement("div", {
-    "class": "alert is-error"
-  }, "You have exceeded the maximum number of users for your account, please upgrade your plan to increaese the limit."), accountUpgraded && /*#__PURE__*/react.createElement("div", {
-    "class": "alert is-success"
-  }, "Your account has been upgraded successfully!"), /*#__PURE__*/react.createElement("div", {
-    "class": "plan"
-  }, /*#__PURE__*/react.createElement("header", null, account.plan_type, " - $", account.planCost(), "/Month"), /*#__PURE__*/react.createElement("div", {
-    "class": "plan-content"
-  }, /*#__PURE__*/react.createElement("div", {
-    "class": "progress-bar"
-  }, /*#__PURE__*/react.createElement("div", {
-    style: {
-      width: "".concat(account.loginPercentage(), "%")
-    },
-    "class": "progress-bar-usage"
-  })), /*#__PURE__*/react.createElement("h3", null, "Users: ", account.login_count, "/", account.plan_limit)), /*#__PURE__*/react.createElement("footer", null, account.plan_type === "standard" && /*#__PURE__*/react.createElement("button", {
-    onClick: handleAccountUpgrade,
-    "class": "button is-success"
-  }, "Upgrade to Enterprise Plan"))));
+var NullLoginError = {
+  message: null
 };
+var NullLogoutError = {
+  message: null
+};
+var sessionContext = /*#__PURE__*/react.createContext();
+var useSession = function useSession() {
+  return react.useContext(sessionContext);
+};
+var SessionProvider = function SessionProvider(_ref) {
+  var children = _ref.children;
+  var session = useProvideSession();
+  return /*#__PURE__*/react.createElement(sessionContext.Provider, {
+    value: session
+  }, children);
+};
+var useProvideSession = function useProvideSession() {
+  var accountId = localStorage.getItem("user_account_id");
+  var token = localStorage.getItem("user_token");
+  var addr = window.location;
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-var App = function App() {
-  var userToken = localStorage.getItem("user_token");
-
-  var _useState = react.useState(userToken !== null),
+  var _useState = react.useState(token !== null),
       _useState2 = _slicedToArray(_useState, 2),
       loggedIn = _useState2[0],
       setLoggedIn = _useState2[1];
-
-  var NullLoginError = {
-    message: null
-  }; // Using this to store and show the login error
 
   var _useState3 = react.useState(NullLoginError),
       _useState4 = _slicedToArray(_useState3, 2),
       loginError = _useState4[0],
       setLoginError = _useState4[1];
 
-  var _useState5 = react.useState({
-    email: "",
-    password: ""
-  }),
+  var _useState5 = react.useState(NullLogoutError),
       _useState6 = _slicedToArray(_useState5, 2),
-      loginRequest = _useState6[0],
-      setLoginRequest = _useState6[1];
+      logoutError = _useState6[0],
+      setLogoutError = _useState6[1];
 
-  var handleLogin = /*#__PURE__*/function () {
-    var _ref = _asyncToGenerator( /*#__PURE__*/regenerator.mark(function _callee(e) {
+  var handleLogin = react.useCallback( /*#__PURE__*/function () {
+    var _ref2 = _asyncToGenerator( /*#__PURE__*/regenerator.mark(function _callee(loginRequest) {
       var response;
       return regenerator.wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
-              e.preventDefault(); // Every attempt reset the error state
-
+              // Every attempt reset the error state
               setLoginError(NullLoginError);
-              _context.prev = 2;
-              _context.next = 5;
-              return axios$2.post("/login", loginRequest);
+              _context.prev = 1;
+              _context.next = 4;
+              return axios$1.post("/login", loginRequest);
 
-            case 5:
+            case 4:
               response = _context.sent;
 
               if (response.status == 200) {
@@ -3097,12 +2884,13 @@ var App = function App() {
               _context.next = 12;
               break;
 
-            case 9:
-              _context.prev = 9;
-              _context.t0 = _context["catch"](2);
+            case 8:
+              _context.prev = 8;
+              _context.t0 = _context["catch"](1);
+              console.log(_context.t0);
 
-              if (error.response) {
-                setLoginError(error.response.data);
+              if (_context.t0.response) {
+                setLoginError(_context.t0.response.data);
               }
 
             case 12:
@@ -3110,94 +2898,339 @@ var App = function App() {
               return _context.stop();
           }
         }
-      }, _callee, null, [[2, 9]]);
+      }, _callee, null, [[1, 8]]);
     }));
 
-    return function handleLogin(_x) {
-      return _ref.apply(this, arguments);
-    };
-  }();
-
-  var handleLogout = /*#__PURE__*/function () {
-    var _ref2 = _asyncToGenerator( /*#__PURE__*/regenerator.mark(function _callee2() {
-      return regenerator.wrap(function _callee2$(_context2) {
-        while (1) {
-          switch (_context2.prev = _context2.next) {
-            case 0:
-              _context2.prev = 0;
-              _context2.next = 3;
-              return axios$2.post("/auth/logout");
-
-            case 3:
-              _context2.sent;
-              _context2.next = 9;
-              break;
-
-            case 6:
-              _context2.prev = 6;
-              _context2.t0 = _context2["catch"](0);
-              console.log(_context2.t0);
-
-            case 9:
-              localStorage.removeItem("user_token");
-              localStorage.removeItem("user_account_id");
-              setLoggedIn(false);
-
-            case 12:
-            case "end":
-              return _context2.stop();
-          }
-        }
-      }, _callee2, null, [[0, 6]]);
-    }));
-
-    return function handleLogout() {
+    return function (_x) {
       return _ref2.apply(this, arguments);
     };
-  }();
+  }(), [loggedIn, setLoggedIn]);
+  var forceLogout = react.useCallback( /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/regenerator.mark(function _callee2() {
+    var response;
+    return regenerator.wrap(function _callee2$(_context2) {
+      while (1) {
+        switch (_context2.prev = _context2.next) {
+          case 0:
+            _context2.prev = 0;
+            _context2.next = 3;
+            return axios$1.post("/auth/logout");
+
+          case 3:
+            response = _context2.sent;
+
+            if (response.status !== 200) {
+              setLogoutError({
+                message: "response state was not 200"
+              });
+            }
+
+            _context2.next = 11;
+            break;
+
+          case 7:
+            _context2.prev = 7;
+            _context2.t0 = _context2["catch"](0);
+            console.log(_context2.t0);
+
+            if (_context2.t0.response) {
+              setLogoutError(_context2.t0.response.data);
+            }
+
+          case 11:
+            localStorage.removeItem("user_token");
+            localStorage.removeItem("user_account_id");
+            setLoggedIn(false);
+
+          case 14:
+          case "end":
+            return _context2.stop();
+        }
+      }
+    }, _callee2, null, [[0, 7]]);
+  })), [loggedIn, forceLogout]);
+  return {
+    loggedIn: loggedIn,
+    accountId: accountId,
+    token: token,
+    addr: addr,
+    loginError: loginError,
+    logoutError: logoutError,
+    handleLogin: handleLogin,
+    forceLogout: forceLogout
+  };
+};
+
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+var DefaultAccountState = function DefaultAccountState() {
+  return {
+    id: '',
+    plan_type: '',
+    plan_limit: 0,
+    login_count: 0
+  };
+};
+
+var useAccount = function useAccount() {
+  var _useState = react.useState(DefaultAccountState()),
+      _useState2 = _slicedToArray(_useState, 2),
+      account = _useState2[0],
+      setAccount = _useState2[1];
+
+  var _useState3 = react.useState(false),
+      _useState4 = _slicedToArray(_useState3, 2),
+      accountUpgraded = _useState4[0],
+      setAccountUpgraded = _useState4[1];
+
+  var planLimitReached = account.plan_limit == account.login_count;
+  var loginPercentage = account.login_count / account.plan_limit * 100;
+  var loginCountDisplay = "".concat(account.login_count, "/").concat(account.plan_limit);
+  var planCost = 0;
+
+  if (account.plan_type === "standard") {
+    planCost = 100;
+  }
+
+  if (account.plan_type === "enterprise") {
+    planCost = 1000;
+  }
+
+  var updateAccount = react.useCallback(function (props) {
+    setAccount(function (oldAccount) {
+      return _objectSpread(_objectSpread({}, oldAccount), props);
+    });
+  }, [account]);
+  var handleUpgradeAccount = react.useCallback( /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/regenerator.mark(function _callee() {
+    var accountId, response, data;
+    return regenerator.wrap(function _callee$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            _context.prev = 0;
+            accountId = localStorage.getItem("user_account_id");
+            _context.next = 4;
+            return axios$1.post("/accounts/".concat(accountId, "/upgrade"));
+
+          case 4:
+            response = _context.sent;
+
+            if (response.status === 200) {
+              // Make the popup appear
+              setAccountUpgraded(true);
+              data = response.data;
+              updateAccount(data); // Get rid of the pop up after 4 seconds
+
+              setInterval(function () {
+                setAccountUpgraded(false);
+              }, 4000);
+            }
+
+            _context.next = 11;
+            break;
+
+          case 8:
+            _context.prev = 8;
+            _context.t0 = _context["catch"](0);
+            console.log(_context.t0);
+
+          case 11:
+          case "end":
+            return _context.stop();
+        }
+      }
+    }, _callee, null, [[0, 8]]);
+  })), [account]);
+  return {
+    account: account,
+    planLimitReached: planLimitReached,
+    loginPercentage: loginPercentage,
+    planCost: planCost,
+    loginCountDisplay: loginCountDisplay,
+    accountUpgraded: accountUpgraded,
+    updateAccount: updateAccount,
+    handleUpgradeAccount: handleUpgradeAccount
+  };
+};
+
+var useAccountUpdates = function useAccountUpdates(handleUpdateAccount, forceLogout) {
+  var _useProvideSession = useProvideSession(),
+      accountId = _useProvideSession.accountId,
+      token = _useProvideSession.token,
+      addr = _useProvideSession.addr;
+
+  react.useEffect(function () {
+    if (!token) {
+      return;
+    }
+
+    var uri = "wss://".concat(addr.host, "/accounts/").concat(accountId, "/updates");
+    var ws = new WebSocket(uri);
+
+    ws.onopen = function () {
+      console.log("websocket connected");
+      ws.send(JSON.stringify({
+        operation: "account_updates_subscribe",
+        token: token
+      }));
+    };
+
+    ws.onclose = function () {
+      console.log("websocket closed");
+    };
+
+    ws.onmessage = function (message) {
+      var parsedMessage = JSON.parse(message.data);
+
+      if (parsedMessage.operation === "authorization_failure") {
+        forceLogout();
+        return;
+      }
+
+      if (parsedMessage.operation === "account_info_response") {
+        var data = JSON.parse(parsedMessage.data);
+        handleUpdateAccount(data);
+      }
+
+      if (parsedMessage.operation === "account_metrics_updated") {
+        var _data = JSON.parse(parsedMessage.data);
+
+        handleUpdateAccount(_data);
+      }
+    };
+  }, []);
+};
+
+var Dashboard = function Dashboard() {
+  var _useSession = useSession(),
+      forceLogout = _useSession.forceLogout;
+
+  var _useAccount = useAccount(),
+      account = _useAccount.account,
+      planLimitReached = _useAccount.planLimitReached,
+      loginPercentage = _useAccount.loginPercentage,
+      planCost = _useAccount.planCost,
+      loginCountDisplay = _useAccount.loginCountDisplay,
+      accountUpgraded = _useAccount.accountUpgraded,
+      updateAccount = _useAccount.updateAccount,
+      handleUpgradeAccount = _useAccount.handleUpgradeAccount;
+
+  useAccountUpdates(updateAccount, forceLogout);
+
+  if (!account) {
+    return /*#__PURE__*/react.createElement(react.Fragment, null, /*#__PURE__*/react.createElement("div", null, "Loading..."));
+  }
+
+  return /*#__PURE__*/react.createElement(react.Fragment, null, /*#__PURE__*/react.createElement("header", {
+    className: "top-nav"
+  }, /*#__PURE__*/react.createElement("h1", {
+    "data-testid": "dashboard-title"
+  }, "User Management Dashboard"), /*#__PURE__*/react.createElement("button", {
+    onClick: forceLogout,
+    className: "button is-border"
+  }, "Logout")), planLimitReached && /*#__PURE__*/react.createElement("div", {
+    className: "alert is-error"
+  }, "You have exceeded the maximum number of users for your account, please upgrade your plan to increase the limit."), accountUpgraded && /*#__PURE__*/react.createElement("div", {
+    className: "alert is-success"
+  }, "Your account has been upgraded successfully!"), /*#__PURE__*/react.createElement("div", {
+    className: "plan"
+  }, /*#__PURE__*/react.createElement("header", null, account.plan_type, " - $", planCost, "/Month"), /*#__PURE__*/react.createElement("div", {
+    className: "plan-content"
+  }, /*#__PURE__*/react.createElement("div", {
+    className: "progress-bar"
+  }, /*#__PURE__*/react.createElement("div", {
+    style: {
+      width: "".concat(loginPercentage, "%")
+    },
+    className: "progress-bar-usage"
+  })), /*#__PURE__*/react.createElement("h3", null, "Users: ", loginCountDisplay)), /*#__PURE__*/react.createElement("footer", null, account.plan_type === "standard" && /*#__PURE__*/react.createElement("button", {
+    onClick: handleUpgradeAccount,
+    className: "button is-success"
+  }, "Upgrade to Enterprise Plan"))));
+};
+
+function ownKeys$1(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread$1(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$1(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$1(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+var LoginForm = function LoginForm() {
+  var _useSession = useSession(),
+      handleLogin = _useSession.handleLogin,
+      loginError = _useSession.loginError;
+
+  var _useState = react.useState({
+    email: "",
+    password: ""
+  }),
+      _useState2 = _slicedToArray(_useState, 2),
+      loginRequest = _useState2[0],
+      setLoginRequest = _useState2[1];
 
   var onInputChange = function onInputChange(name, value) {
-    setLoginRequest(_objectSpread(_objectSpread({}, loginRequest), {}, _defineProperty({}, name, value)));
-  }; // If the user is logged in, render the dashboard instead
+    setLoginRequest(_objectSpread$1(_objectSpread$1({}, loginRequest), {}, _defineProperty({}, name, value)));
+  };
 
-
-  if (loggedIn) {
-    return /*#__PURE__*/react.createElement(Dashboard, {
-      handleLogout: handleLogout
-    });
-  } // If the user is not logged in, render the login form
-
+  var handleLoginSubmit = function handleLoginSubmit(e) {
+    e.preventDefault();
+    handleLogin(loginRequest);
+  };
 
   return /*#__PURE__*/react.createElement("form", {
     className: "login-form",
-    onSubmit: handleLogin
+    onSubmit: handleLoginSubmit
   }, /*#__PURE__*/react.createElement("h1", null, "Sign Into Your Account"), /*#__PURE__*/react.createElement("div", null, /*#__PURE__*/react.createElement("label", {
-    "for": "email"
+    htmlFor: "email"
   }, "Email Address"), /*#__PURE__*/react.createElement("input", {
     onChange: function onChange(event) {
       return onInputChange("email", event.target.value);
     },
     type: "email",
+    "data-testid": "email",
     id: "email",
     className: "field"
   })), /*#__PURE__*/react.createElement("div", null, /*#__PURE__*/react.createElement("label", {
-    "for": "password"
+    htmlFor: "password"
   }, "Password"), /*#__PURE__*/react.createElement("input", {
     onChange: function onChange(event) {
       return onInputChange("password", event.target.value);
     },
     type: "password",
+    "data-testid": "password",
     id: "password",
     className: "field"
   })), loginError.message && /*#__PURE__*/react.createElement("div", {
     className: "alert is-error"
   }, "Error: ", loginError.message, " "), /*#__PURE__*/react.createElement("button", {
+    "data-testid": "login-button",
     type: "submit",
     className: "button block"
   }, "Login to my Dashboard"));
 };
 
-axios$2.interceptors.request.use(function (config) {
+var App = function App() {
+  var _useSession = useSession(),
+      loggedIn = _useSession.loggedIn;
+
+  return /*#__PURE__*/react.createElement(react.Fragment, null, !loggedIn && /*#__PURE__*/react.createElement(LoginForm, null), loggedIn && /*#__PURE__*/react.createElement(Dashboard, null));
+};
+
+axios$1.interceptors.request.use(function (config) {
   // Authorization Token
   var token = localStorage.getItem("user_token");
 
@@ -3208,4 +3241,4 @@ axios$2.interceptors.request.use(function (config) {
   return config;
 });
 var AppContainer = document.querySelector("#app-container");
-reactDom.render( /*#__PURE__*/react.createElement(App, null), AppContainer);
+reactDom.render( /*#__PURE__*/react.createElement(SessionProvider, null, /*#__PURE__*/react.createElement(App, null)), AppContainer);
