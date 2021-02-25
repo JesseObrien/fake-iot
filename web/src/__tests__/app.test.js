@@ -10,6 +10,7 @@ import {
 } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
 import App from "../app.js";
+import { SessionProvider } from '../svc/use_session';
 
 afterEach(() => {
   window.localStorage.removeItem("user_token");
@@ -18,14 +19,18 @@ afterEach(() => {
 jest.mock("axios");
 
 it("renders dashboard after login", () => {
-  const component = shallow(<App />);
+  const ctx = {
+    loggedIn: false
+  }
 
-  const button = component.find("button");
-  expect(button.text()).toEqual("Login to my Dashboard");
+  const { container } = render(<SessionProvider><App /></SessionProvider>);
+
+  const loginFormTitle = getByTestId(container, 'login-form-title')
+  expect(loginFormTitle).toHaveTextContent("Sign Into Your Account");
 });
 
 it("starts logged out", async () => {
-  const { container } = render(<App />);
+  const { container } = render(<SessionProvider><App /></SessionProvider>);
   const loginBtn = getByTestId(container, "login-button");
   const inputEmail = getByTestId(container, "email");
   const inputPassword = getByTestId(container, "password");

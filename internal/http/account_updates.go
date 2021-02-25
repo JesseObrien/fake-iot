@@ -1,11 +1,9 @@
 package http
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/gorilla/websocket"
 	"github.com/jesseobrien/fake-iot/internal/storage"
@@ -32,14 +30,10 @@ type SocketMessage struct {
 	Data      string          `json:"data,omitempty"`
 }
 
-type AccountUpdatesRequest struct {
-	AccountId string `path:"id"`
-}
-
 func AccountUpdatesHandler(tokenStore *storage.TokenStore, accountStore storage.AccountStore, accountUpdateStore *storage.AccountUpdateStore) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		updateRequest := AccountUpdatesRequest{}
-		if err := echo.PathParamsBinder(ctx).MustString("id", &updateRequest.AccountId).BindError(); err != nil {
+		var accountId string
+		if err := echo.PathParamsBinder(ctx).MustString("id", &accountId).BindError(); err != nil {
 			ctx.Logger().Error(err)
 			return err
 		}
@@ -61,23 +55,24 @@ func AccountUpdatesHandler(tokenStore *storage.TokenStore, accountStore storage.
 			}
 
 			// Check that a valid token has been sent in the message payload
-			if err := checkMessageToken(ctx, msg, tokenStore, socket); err != nil {
+			if err := checkMessageToken(ctx, accountId, msg, tokenStore, socket); err != nil {
 				ctx.Logger().Error(err)
+
+				if err := socket.WriteJSON(SocketMessage{Operation: SocketError, Data: err.Error()}); err != nil {
+					ctx.Logger().Error(err)
+				}
 				break
 			}
 
 			// React to the different message types
 			switch msg.Operation {
 			case AccountUpdatesSubscribeRequest:
-				if err := handleAccountUpdatesSubscribeRequest(ctx.Request().Context(), accountStore, updateRequest.AccountId, socket); err != nil {
+				if err := handleAccountUpdatesSubscribeRequest(ctx, accountStore, accountId, socket); err != nil {
 					ctx.Logger().Error(err)
 					break
 				}
 
-				subscription := accountUpdateStore.Subscribe(updateRequest.AccountId)
-
-				// @TODO subscribe to the channel for the account to send updates for the account ID
-				go handleAccountUpdatesSubscription(ctx, subscription, socket)
+				go handleAccountUpdatesSubscription(ctx, accountId, accountUpdateStore, socket)
 
 			default:
 				if err := socket.WriteJSON(SocketMessage{Operation: SocketError, Data: fmt.Sprintf("unregistered operation: %s", msg.Operation)}); err != nil {
@@ -89,9 +84,8 @@ func AccountUpdatesHandler(tokenStore *storage.TokenStore, accountStore storage.
 	}
 }
 
-func checkMessageToken(ctx echo.Context, msg SocketMessage, tokenStore *storage.TokenStore, socket *websocket.Conn) error {
-	token := strings.TrimPrefix(msg.Token, "Bearer ")
-	if tokenStore.IsValid(token) {
+func checkMessageToken(ctx echo.Context, accountId string, msg SocketMessage, tokenStore *storage.TokenStore, socket *websocket.Conn) error {
+	if tokenStore.IsValidAccountToken(msg.Token, accountId) {
 		return nil
 	}
 
@@ -103,22 +97,31 @@ func checkMessageToken(ctx echo.Context, msg SocketMessage, tokenStore *storage.
 	return errors.New("websocket message sent with invalid authorization token")
 }
 
-func handleAccountUpdatesSubscription(ctx echo.Context, subscription *storage.AccountUpdateSubscription, socket *websocket.Conn) {
-	defer subscription.Unsubscribe()
+func handleAccountUpdatesSubscription(ctx echo.Context, accountId string, accountUpdateStore *storage.AccountUpdateStore, socket *websocket.Conn) {
 
-	for {
-		accountUpdate := <-subscription.Updates
+	subscription := accountUpdateStore.Subscribe(accountId)
+	defer func() {
+		if err := accountUpdateStore.Unsubscribe(subscription); err != nil {
+			ctx.Logger().Error(err)
+		}
+	}()
 
-		jsonUpdate, _ := json.Marshal(accountUpdate)
+	for accountUpdate := range subscription.Updates {
+		jsonUpdate, err := json.Marshal(accountUpdate)
+		if err != nil {
+			ctx.Logger().Error(err)
+			return
+		}
 
 		if err := socket.WriteJSON(SocketMessage{Operation: AccountMetricsUpdated, Data: string(jsonUpdate)}); err != nil {
 			ctx.Logger().Error(err)
+			return
 		}
 	}
 }
 
-func handleAccountUpdatesSubscribeRequest(ctx context.Context, accountStore storage.AccountStore, accountId string, socket *websocket.Conn) error {
-	accountInfo, err := accountStore.GetAccountInfo(ctx, accountId)
+func handleAccountUpdatesSubscribeRequest(ctx echo.Context, accountStore storage.AccountStore, accountId string, socket *websocket.Conn) error {
+	accountInfo, err := accountStore.GetAccountInfo(ctx.Request().Context(), accountId)
 	if err != nil {
 		// Let the front-end know there's been an error
 		// @NOTE this is a generic error. Ideally I'd abstract out having Request/Response objects with
@@ -129,7 +132,11 @@ func handleAccountUpdatesSubscribeRequest(ctx context.Context, accountStore stor
 		return fmt.Errorf("could not get account info %w", err)
 	}
 
-	jsonInfo, _ := json.Marshal(accountInfo)
+	jsonInfo, err := json.Marshal(accountInfo)
+	if err != nil {
+		return err
+	}
+
 	if err := socket.WriteJSON(SocketMessage{Operation: AccountInfoResponse, Data: string(jsonInfo)}); err != nil {
 		return err
 	}

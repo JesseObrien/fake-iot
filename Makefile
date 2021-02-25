@@ -1,7 +1,6 @@
 .ONESHELL:
 .PHONY: install
-install:
-	$(MAKE) certs
+install: certs
 	go get -u github.com/rakyll/statik
 	go get -u github.com/cosmtrek/air
 	go mod vendor

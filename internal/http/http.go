@@ -18,7 +18,11 @@ const UserEmail = "test@example.com"
 
 // As in the design doc, I'm hard coding the password and will hash it on startup. Ideally
 // the bcrypt hash would be stored in the database along with the username.
-var UserPassword = "p@ssw0rd"
+const UserPassword = "p@ssw0rd"
+
+// As in the desgin doc, I'm hardcoding the account id. Ideally it would be pulled from the database
+// when the user logs in
+const UserAccountId = "47f3c307-6344-49e7-961c-ea200e950a89"
 
 func Run(database *sql.DB, listenAddress, certPath, keyPath, apiToken string) error {
 	e := echo.New()
@@ -54,7 +58,7 @@ func Run(database *sql.DB, listenAddress, certPath, keyPath, apiToken string) er
 	}
 
 	e.POST("/metrics", IngestMetricsHandler(apiToken, metricStore, accountUpdateStore))
-	e.POST("/login", UserLoginHandler(tokenStore, UserEmail, hashedpw))
+	e.POST("/login", UserLoginHandler(tokenStore, UserEmail, hashedpw, UserAccountId))
 
 	// Protected routes
 	g := e.Group("auth")

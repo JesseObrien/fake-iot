@@ -24,7 +24,8 @@ To run the project without doing development run:
 2. `make run`
 3. Visit [https://localhost:8080](https://localhost:8080) in your browser **(Note: Do install the generated certificate into your browser as instructed above!)**
 4. Install the the [fakeiot binary](https://github.com/gravitational/fakeiot) on your machine so you can run the commannd to insert the metrics and see them updating on the front-end.
-5. `fakeiot --token=882e8f9b-76a3-46fb-9f7e-bd536bdf5795 --url="https://127.0.0.1:8080" --ca-cert=./certs/server.crt run --users=100 --account-id=47f3c307-6344-49e7-961c-ea200e950a89`
+5. Log into the interface with `test@example.com` and `p@ssw0rd` as the credentials.
+6. `fakeiot --token=882e8f9b-76a3-46fb-9f7e-bd536bdf5795 --url="https://127.0.0.1:8080" --ca-cert=./certs/server.crt run --users=100 --account-id=47f3c307-6344-49e7-961c-ea200e950a89`
 
 ## Development
 

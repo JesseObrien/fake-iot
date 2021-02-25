@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/google/uuid"
@@ -12,31 +13,9 @@ type AccountUpdate struct {
 }
 
 type AccountUpdateSubscription struct {
+	AccountId             string
 	SubscriptionReference string
 	Updates               chan AccountUpdate
-
-	// the list of subscriptions this subscription belongs to. used for unsubscribe
-	subscriptionList *[]AccountUpdateSubscription
-
-	// Link to the top level mutex in the update store to lock when we're unsubscribing
-	mu *sync.Mutex
-}
-
-func (aus *AccountUpdateSubscription) Unsubscribe() {
-	aus.mu.Lock()
-	defer aus.mu.Unlock()
-
-	for idx, subscription := range *aus.subscriptionList {
-		if subscription.SubscriptionReference == aus.SubscriptionReference {
-			// Close the updates channel
-			close(subscription.Updates)
-			// Remove the subscription from the list and break out
-			s := *aus.subscriptionList
-			s = append(s[:idx], s[idx+1:]...)
-			*aus.subscriptionList = s
-			break
-		}
-	}
 }
 
 type AccountUpdateStore struct {
@@ -56,20 +35,49 @@ func (aus *AccountUpdateStore) Subscribe(accountId string) *AccountUpdateSubscri
 	defer aus.mu.Unlock()
 	updates := aus.accountUpdates[accountId]
 	newSubscription := AccountUpdateSubscription{
+		AccountId:             accountId,
 		SubscriptionReference: uuid.New().String(),
-		Updates:               make(chan AccountUpdate),
-		subscriptionList:      &updates,
-		mu:                    aus.mu,
+		Updates:               make(chan AccountUpdate, 100),
 	}
 	aus.accountUpdates[accountId] = append(updates, newSubscription)
 	return &newSubscription
 }
 
+func (aus *AccountUpdateStore) Unsubscribe(subscription *AccountUpdateSubscription) error {
+	aus.mu.Lock()
+	defer aus.mu.Unlock()
+
+	subscriptionList, ok := aus.accountUpdates[subscription.AccountId]
+	if !ok {
+		return fmt.Errorf("account subscriptions do not exist for %v", subscription.AccountId)
+	}
+
+	for idx, sub := range subscriptionList {
+		if subscription.SubscriptionReference == sub.SubscriptionReference {
+			// Close the updates channel
+			close(subscription.Updates)
+			// Remove the subscription from the list and break out
+			s := subscriptionList
+			s = append(s[:idx], s[idx+1:]...)
+			aus.accountUpdates[subscription.AccountId] = s
+			break
+		}
+	}
+
+	return nil
+}
+
 func (aus *AccountUpdateStore) Fanout(accountId string, update AccountUpdate) {
+	aus.mu.Lock()
+	defer aus.mu.Unlock()
+
 	// Get the subscriptions, if there are none, the range will no-op
 	subscriptions := aus.accountUpdates[accountId]
 
 	for _, subscription := range subscriptions {
-		subscription.Updates <- update
+		select {
+		case subscription.Updates <- update: // Write to the channel unless it's blocked
+		default: // if the channel is blocked, no-op
+		}
 	}
 }
